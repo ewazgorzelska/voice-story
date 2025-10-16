@@ -1,94 +1,127 @@
-# 10x Astro Starter
+# Voice Story App
 
-A modern, opinionated starter template for building fast, accessible, and AI-friendly web applications.
+[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)]()
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/license-TBD-lightgrey.svg)]()
+
+## Description
+
+Voice Story App is a web application that allows parents and loved ones to create personalized bedtime stories for children, narrated in their own cloned voice. Using AI-powered voice cloning, users record a short voice sample and generate audio narrations of classic fairy tales, providing a magical and comforting experience — even when they can’t be there in person.
+
+## Table of Contents
+
+1. [Tech Stack](#tech-stack)  
+2. [Getting Started Locally](#getting-started-locally)  
+3. [Available Scripts](#available-scripts)  
+4. [Project Scope](#project-scope)  
+   - [In Scope](#in-scope)  
+   - [Out of Scope](#out-of-scope)  
+5. [Project Status](#project-status)  
+6. [License](#license)  
 
 ## Tech Stack
 
-- [Astro](https://astro.build/) v5.5.5 - Modern web framework for building fast, content-focused websites
-- [React](https://react.dev/) v19.0.0 - UI library for building interactive components
-- [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
-- [Tailwind CSS](https://tailwindcss.com/) v4.0.17 - Utility-first CSS framework
+- **Frontend**: Astro 5, React 19, TypeScript 5, Tailwind CSS 4, Shadcn/UI  
+- **Backend**: Supabase (PostgreSQL, Auth, Storage, Row-Level Security)  
+- **AI Services**:  
+  - Openrouter.ai (multi-model orchestration & spending caps)  
+  - ElevenLabs API (voice cloning)  
+- **CI/CD & Hosting**: GitHub Actions, Docker, DigitalOcean  
 
-## Prerequisites
+## Getting Started Locally
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
-- npm (comes with Node.js)
+### Prerequisites
 
-## Getting Started
+- [Node.js](https://nodejs.org/) **v22.14.0**  
+- [nvm](https://github.com/nvm-sh/nvm) (optional, for managing Node versions)
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
-```
-
-2. Install dependencies:
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/ewazgorzelska/voice-story.git
+cd voice-story
+
+# Install dependencies
 npm install
 ```
 
-3. Run the development server:
+### Configuration
+
+Create a `.env` file in the project root and add the following variables:
+
+```bash
+# Supabase
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+
+# ElevenLabs
+ELEVENLABS_API_KEY=<your-elevenlabs-api-key>
+
+# Openrouter
+OPENROUTER_API_KEY=<your-openrouter-api-key>
+```
+
+### Start the Development Server
 
 ```bash
 npm run dev
 ```
 
-4. Build for production:
-
-```bash
-npm run build
-```
+Open your browser at `http://localhost:3000` to view the app.
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint issues
+In the project directory, you can run:
 
-## Project Structure
+- `npm run dev`  
+  Starts the Astro development server with hot reloading.
 
-```md
-.
-├── src/
-│   ├── layouts/    # Astro layouts
-│   ├── pages/      # Astro pages
-│   │   └── api/    # API endpoints
-│   ├── components/ # UI components (Astro & React)
-│   └── assets/     # Static assets
-├── public/         # Public assets
-```
+- `npm run build`  
+  Builds the production-ready static site.
 
-## AI Development Support
+- `npm run preview`  
+  Serves the built site locally for testing.
 
-This project is configured with AI development tools to enhance the development experience, providing guidelines for:
+- `npm run astro`  
+  Runs the Astro CLI.
 
-- Project structure
-- Coding practices
-- Frontend development
-- Styling with Tailwind
-- Accessibility best practices
-- Astro and React guidelines
+- `npm run lint`  
+  Runs ESLint across the codebase.
 
-### Cursor IDE
+- `npm run lint:fix`  
+  Runs ESLint with `--fix`.
 
-The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
+- `npm run format`  
+  Formats code with Prettier.
 
-### GitHub Copilot
+## Project Scope
 
-AI instructions for GitHub Copilot are available in `.github/copilot-instructions.md`
+### In Scope
 
-### Windsurf
+- User authentication (email/password registration and login)  
+- Voice sample recording (30–60 s with random phrase verification)  
+- Voice cloning via ElevenLabs (one clone per user)  
+- Predefined library of 5–10 classic fairy tales (hardcoded backend)  
+- Audio story generation with progress indicator  
+- Personal “My Library” section for saved audio stories (play, pause, volume, background playback)  
+- End-to-end encryption of user data  
 
-The `.windsurfrules` file contains AI configuration for Windsurf.
+### Out of Scope
 
-## Contributing
+- Social login (Google, Apple)  
+- Multiple voice clones per account  
+- User-provided text for story generation  
+- Assigning different voices to characters  
+- Native mobile applications  
+- In-app user feedback mechanism  
+- Advanced library features (search, filtering, categories)  
+- Monetization (subscriptions, purchases)  
 
-Please follow the AI guidelines and coding practices defined in the AI configuration files when contributing to this project.
+## Project Status
+
+This project is in active development as an MVP. Core features are being built and tested.
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
