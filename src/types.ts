@@ -42,7 +42,7 @@ export interface PaginationMetaDto {
   /** Current page number */
   page: number;
   /** Items per page */
-  pageSize: number;
+  page_size: number;
   /** Total number of items */
   total: number;
 }
