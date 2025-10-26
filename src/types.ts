@@ -106,6 +106,7 @@ export type GenerationLogDto = Pick<GenLogRow, "event" | "occurred_at">;
 /** Response DTO for GET /api/story-generations/:id/logs */
 export interface GetGenerationLogsResponseDto {
   logs: GenerationLogDto[];
+  meta?: PaginationMetaDto;
 }
 
 //#endregion

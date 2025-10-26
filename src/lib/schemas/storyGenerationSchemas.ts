@@ -45,3 +45,30 @@ export const GetByIdSchema = z.object({
 export const DeleteGenerationSchema = z.object({
   id: z.string().uuid("id must be a valid UUID"),
 });
+
+/**
+ * Schema for GET /api/story-generations/:id/logs path parameter
+ * Validates the generation ID
+ */
+export const GetLogsSchema = z.object({
+  id: z.string().uuid("id must be a valid UUID"),
+});
+
+/**
+ * Schema for GET /api/story-generations/:id/logs query parameters
+ * Validates pagination parameters
+ */
+export const GetLogsQuerySchema = z.object({
+  page: z
+    .string()
+    .optional()
+    .default("1")
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().positive("page must be a positive integer")),
+  pageSize: z
+    .string()
+    .optional()
+    .default("50")
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().positive("pageSize must be a positive integer").max(100, "pageSize cannot exceed 100")),
+});
