@@ -1,9 +1,9 @@
 // src/pages/api/story-generations/[id].ts
 
 import type { APIRoute } from "astro";
-import { GetByIdSchema, DeleteGenerationSchema } from "../../../lib/schemas/storyGenerationSchemas";
-import * as storyGenerationService from "../../../lib/services/storyGenerationService";
-import { DEFAULT_USER_ID } from "../../../db/supabase.client";
+import { GetByIdSchema, DeleteGenerationSchema } from "../../../../lib/schemas/storyGenerationSchemas";
+import * as storyGenerationService from "../../../../lib/services/storyGenerationService";
+import { DEFAULT_USER_ID } from "../../../../db/supabase.client";
 
 export const prerender = false;
 
