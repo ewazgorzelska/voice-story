@@ -1,0 +1,57 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import StoryGenerationView from "../../components/ui/story-generation/StoryGenerationView";
+import type { StoryDto } from "../../types";
+
+const { slug } = Astro.params;
+
+// Validate slug parameter
+if (!slug) {
+  return Astro.redirect("/stories");
+}
+
+const supabase = Astro.locals.supabase;
+
+// Check authentication
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect("/login");
+}
+
+// Fetch story by slug
+const { data: story, error: storyError } = await supabase
+  .from("stories")
+  .select("id, title, slug, content")
+  .eq("slug", slug)
+  .single();
+
+// Handle story not found
+if (storyError || !story) {
+  return Astro.redirect("/404");
+}
+
+// Check if user has verified voice sample
+const { data: voiceSample } = await supabase
+  .from("voice_samples")
+  .select("id")
+  .eq("user_id", session.user.id)
+  .eq("verified", true)
+  .single();
+
+const userHasVoiceSample = !!voiceSample;
+
+// Type-cast story to StoryDto for type safety
+const storyDto: StoryDto = {
+  id: story.id,
+  title: story.title,
+  slug: story.slug,
+  content: story.content,
+};
+---
+
+<Layout title={storyDto.title}>
+  <StoryGenerationView story={storyDto} userHasVoiceSample={userHasVoiceSample} client:load />
+</Layout>

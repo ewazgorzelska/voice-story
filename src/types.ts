@@ -110,3 +110,119 @@ export interface GetGenerationLogsResponseDto {
 }
 
 //#endregion
+
+//
+//#region Story Generation View Models
+
+/** Generation status type */
+export type GenerationStatus = "pending" | "in_progress" | "completed" | "failed";
+
+/** Internal generation state in component */
+export interface GenerationState {
+  /** Whether generation is in progress */
+  isGenerating: boolean;
+  /** ID of current generation (from API) */
+  generationId: string | null;
+  /** Current generation status */
+  status: "idle" | GenerationStatus;
+  /** Generation progress (0-100) */
+  progress: number;
+  /** Error message if occurred */
+  error: string | null;
+  /** Timestamp of start (for time calculation) */
+  startTime: number | null;
+  /** Timestamp of last progress update */
+  lastProgressUpdate: number | null;
+  /** Last known progress (for calculating rate) */
+  lastProgress: number;
+}
+
+/** Props for main view component */
+export interface StoryGenerationViewProps {
+  /** Story data from Astro */
+  story: StoryDto;
+  /** Whether user has voice sample */
+  userHasVoiceSample: boolean;
+}
+
+/** Props for progress display component */
+export interface GenerationProgressDisplayProps {
+  /** Current generation status */
+  status: GenerationStatus;
+  /** Generation progress (0-100) */
+  progress: number;
+  /** Estimated time remaining in seconds */
+  estimatedTimeRemaining?: number;
+}
+
+/** Props for generation button section */
+export interface GenerationSectionProps {
+  /** Generate button click handler */
+  onGenerate: () => void;
+  /** Whether button is disabled */
+  disabled: boolean;
+  /** Whether generation is loading */
+  isLoading: boolean;
+  /** Whether user has voice sample */
+  userHasVoiceSample: boolean;
+}
+
+/** Props for generate button */
+export interface GenerateButtonProps {
+  /** Button click handler */
+  onClick: () => void;
+  /** Whether button is disabled */
+  disabled: boolean;
+  /** Whether button is in loading state */
+  isLoading: boolean;
+}
+
+/** Props for story content display */
+export interface StoryContentDisplayProps {
+  /** Story title */
+  title: string;
+  /** Story content */
+  content: string;
+}
+
+/** Props for status indicator */
+export interface StatusIndicatorProps {
+  /** Current generation status */
+  status: GenerationStatus;
+}
+
+/** Props for estimated time display */
+export interface EstimatedTimeDisplayProps {
+  /** Time remaining in seconds */
+  timeRemaining?: number;
+}
+
+/** Props for error message */
+export interface ErrorMessageProps {
+  /** Error message text */
+  message: string;
+  /** Dismiss callback */
+  onDismiss?: () => void;
+  /** Whether error is dismissible */
+  dismissible?: boolean;
+}
+
+/** Standardized API error */
+export interface ApiError {
+  /** HTTP status code */
+  code: number;
+  /** Error message */
+  message: string;
+}
+
+/** Polling configuration */
+export interface PollingConfig {
+  /** Polling frequency in ms */
+  intervalMs: number;
+  /** Max retry attempts on error */
+  maxRetries: number;
+  /** Multiplier for exponential backoff */
+  backoffMultiplier: number;
+}
+
+//#endregion
