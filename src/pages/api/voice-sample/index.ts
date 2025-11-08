@@ -9,13 +9,108 @@ import { ZodError } from "zod";
 export const prerender = false;
 
 /**
+ * GET /api/voice-sample
+ *
+ * Returns the voice sample for the authenticated user.
+ *
+ * @returns 200 - Voice sample found
+ * @returns 401 - Unauthorized (missing/invalid token)
+ * @returns 404 - Not found (no voice sample exists)
+ * @returns 500 - Internal server error
+ */
+export const GET: APIRoute = async ({ locals }) => {
+  // Authenticate user
+  const {
+    data: { user },
+    error: authError,
+  } = await locals.supabase.auth.getUser();
+
+  if (authError || !user) {
+    return new Response(
+      JSON.stringify({
+        message: "Unauthorized",
+      }),
+      {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // Fetch user's voice sample
+  try {
+    const { data: sample, error: fetchError } = await locals.supabase
+      .from("voice_samples")
+      .select("id, user_id, created_at, verified")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error("Error fetching voice sample:", fetchError);
+      return new Response(
+        JSON.stringify({
+          message: "Failed to fetch voice sample",
+        }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    if (!sample) {
+      return new Response(
+        JSON.stringify({
+          message: "Voice sample not found",
+        }),
+        {
+          status: 404,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const response: VoiceSampleDto = sample;
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  } catch (error) {
+    console.error("Error in GET /api/voice-sample:", error);
+    return new Response(
+      JSON.stringify({
+        message: "Internal server error",
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+};
+
+/**
  * POST /api/voice-sample
  *
  * Creates a new voice sample for the authenticated user.
  * Requires authentication and validates that the user doesn't already have a voice sample.
+ * Accepts multipart/form-data with:
+ *   - audio: File (audio/webm)
+ *   - verification_phrase: string
  *
  * @returns 201 - Voice sample created successfully
- * @returns 400 - Bad request (invalid input)
+ * @returns 400 - Bad request (invalid input or missing audio file)
  * @returns 401 - Unauthorized (missing/invalid token)
  * @returns 409 - Conflict (voice sample already exists)
  * @returns 422 - Unprocessable Entity (validation errors)
@@ -42,15 +137,15 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
   }
 
-  // Parse and validate request body
-  let requestBody;
+  // Parse FormData
+  let formData;
   try {
-    requestBody = await request.json();
+    formData = await request.formData();
   } catch (error) {
-    console.error("Error parsing JSON in request body:", error);
+    console.error("Error parsing form data:", error);
     return new Response(
       JSON.stringify({
-        message: "Invalid JSON in request body",
+        message: "Invalid form data",
       }),
       {
         status: 400,
@@ -61,10 +156,83 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
   }
 
-  // Validate input with Zod
+  // Extract audio file and verification phrase
+  const audioFile = formData.get("audio");
+  const verificationPhrase = formData.get("verification_phrase");
+
+  if (!audioFile || !(audioFile instanceof File)) {
+    return new Response(
+      JSON.stringify({
+        message: "Audio file is required",
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  if (!verificationPhrase || typeof verificationPhrase !== "string") {
+    return new Response(
+      JSON.stringify({
+        message: "Verification phrase is required",
+      }),
+      {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // Upload audio file to Supabase Storage
+  let audioUrl: string;
+  try {
+    const timestamp = Date.now();
+    const filename = `voice-sample-${user.id}-${timestamp}.webm`;
+    const path = `${filename}`;
+
+    // Convert File to ArrayBuffer for upload
+    const arrayBuffer = await audioFile.arrayBuffer();
+
+    const { error: uploadErr } = await locals.supabase.storage.from("voice-samples").upload(path, arrayBuffer, {
+      contentType: "audio/webm",
+      upsert: false,
+    });
+
+    if (uploadErr) {
+      console.error("Storage upload error:", uploadErr);
+      throw new Error(`Upload failed: ${uploadErr.message}`);
+    }
+
+    // Get public URL
+    const { data: urlData } = locals.supabase.storage.from("voice-samples").getPublicUrl(path);
+    audioUrl = urlData.publicUrl;
+  } catch (error) {
+    console.error("Error uploading audio file:", error);
+    return new Response(
+      JSON.stringify({
+        message: "Failed to upload audio file",
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  }
+
+  // Validate the command data with Zod
   let validatedData;
   try {
-    validatedData = createVoiceSampleSchema.parse(requestBody);
+    validatedData = createVoiceSampleSchema.parse({
+      audio_url: audioUrl,
+      verification_phrase: verificationPhrase,
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       return new Response(

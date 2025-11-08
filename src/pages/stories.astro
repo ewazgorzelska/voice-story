@@ -1,0 +1,15 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import StoryLibraryView from "@/components/StoryLibraryView";
+
+// Check if user is authenticated
+const session = Astro.locals.supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect("/");
+}
+---
+
+<Layout title="Biblioteka Opowiadań">
+  <StoryLibraryView client:load />
+</Layout>
