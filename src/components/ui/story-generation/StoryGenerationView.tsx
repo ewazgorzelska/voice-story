@@ -41,7 +41,7 @@ const StoryGenerationView = ({ story, userHasVoiceSample }: StoryGenerationViewP
   }, [startGeneration, userHasVoiceSample]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12 max-w-4xl">
       {/* Error Message */}
       {state.error && <ErrorMessage message={state.error} onDismiss={resetError} dismissible={true} />}
 
@@ -49,20 +49,22 @@ const StoryGenerationView = ({ story, userHasVoiceSample }: StoryGenerationViewP
       <StoryContentDisplay title={story.title} content={story.content} />
 
       {/* Generation Controls or Progress */}
-      {state.isGenerating ? (
-        <GenerationProgressDisplay
-          status={state.status === "idle" ? "pending" : state.status}
-          progress={state.progress}
-          estimatedTimeRemaining={estimatedTimeRemaining}
-        />
-      ) : (
-        <GenerationSection
-          onGenerate={handleStartGeneration}
-          disabled={!userHasVoiceSample || state.isGenerating}
-          isLoading={state.isGenerating}
-          userHasVoiceSample={userHasVoiceSample}
-        />
-      )}
+      <div className="mt-6 sm:mt-8">
+        {state.isGenerating ? (
+          <GenerationProgressDisplay
+            status={state.status === "idle" ? "pending" : state.status}
+            progress={state.progress}
+            estimatedTimeRemaining={estimatedTimeRemaining}
+          />
+        ) : (
+          <GenerationSection
+            onGenerate={handleStartGeneration}
+            disabled={!userHasVoiceSample || state.isGenerating}
+            isLoading={state.isGenerating}
+            userHasVoiceSample={userHasVoiceSample}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -10,7 +10,7 @@ const ErrorMessage = ({ message, onDismiss, dismissible = true }: ErrorMessagePr
 
   return (
     <div
-      className="flex items-center gap-3 p-4 mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+      className="flex items-center gap-3 p-4 mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 animate-in fade-in slide-in-from-top-2 duration-300"
       role="alert"
       aria-live="assertive"
     >

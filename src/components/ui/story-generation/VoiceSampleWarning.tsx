@@ -29,7 +29,7 @@ const VoiceSampleWarning = () => {
         </p>
         <a
           href="/voice-sample"
-          className="text-sm font-semibold text-yellow-900 dark:text-yellow-100 underline hover:no-underline"
+          className="text-sm font-semibold text-yellow-900 dark:text-yellow-100 underline hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 rounded-sm transition-all"
         >
           Record Now →
         </a>

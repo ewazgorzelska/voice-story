@@ -19,22 +19,24 @@ const GenerationProgressDisplay = ({ status, progress, estimatedTimeRemaining }:
 
   return (
     <div
-      className="w-full max-w-2xl mx-auto p-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm"
+      className="w-full max-w-2xl mx-auto p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md transition-shadow animate-in fade-in duration-500"
       role="region"
       aria-label="Generation progress"
+      aria-live="polite"
     >
       <StatusIndicator status={status} />
 
       <Progress
         value={clampedProgress}
-        className="w-full h-3 mb-2"
+        className="w-full h-2 sm:h-3 mb-2"
+        role="progressbar"
         aria-valuenow={clampedProgress}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label="Generation progress"
+        aria-label={`Story generation progress: ${clampedProgress} percent complete`}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{clampedProgress}%</span>
         <EstimatedTimeDisplay timeRemaining={estimatedTimeRemaining} />
       </div>

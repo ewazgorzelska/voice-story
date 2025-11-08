@@ -12,6 +12,7 @@ const GenerateButton = ({ onClick, disabled, isLoading }: GenerateButtonProps) =
       disabled={disabled || isLoading}
       aria-disabled={disabled || isLoading}
       aria-busy={isLoading}
+      aria-label={isLoading ? "Generating story in progress" : "Generate story with your voice"}
       size="lg"
       className="min-w-[200px]"
     >
