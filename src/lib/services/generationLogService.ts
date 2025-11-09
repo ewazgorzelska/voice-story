@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { GetGenerationLogsResponseDto } from "../../types";
+import { logError } from "@/lib/logger";
 
 /**
  * Generation Log Service
@@ -35,7 +36,7 @@ export async function getLogsByGenerationId(
     .range(offset, offset + pageSize - 1);
 
   if (error) {
-    console.error("Failed to fetch generation logs:", error);
+    logError("Failed to fetch generation logs:", error);
     throw new Error("Failed to fetch generation logs");
   }
 

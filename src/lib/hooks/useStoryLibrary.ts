@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { logError } from "@/lib/logger";
 import type { StorySummaryDto, PaginationMetaDto, GetStoriesResponseDto } from "@/types";
 
 interface UseStoryLibraryParams {
@@ -50,7 +52,7 @@ export function useStoryLibrary({ initialPage = 1, pageSize = 12 }: UseStoryLibr
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load stories";
       setError(errorMessage);
-      console.error("Error fetching stories:", err);
+      logError("Error fetching stories:", err);
     } finally {
       setIsLoading(false);
     }

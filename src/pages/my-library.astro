@@ -1,0 +1,18 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import MyLibraryView from "@/components/MyLibraryView";
+
+const session = await Astro.locals.supabase.auth.getSession();
+
+if (!session) {
+  return Astro.redirect("/login");
+}
+
+const pageParam = Astro.url.searchParams.get("page");
+const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : 1;
+const initialPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+---
+
+<Layout title="My Library">
+  <MyLibraryView initialPage={initialPage} client:load />
+</Layout>

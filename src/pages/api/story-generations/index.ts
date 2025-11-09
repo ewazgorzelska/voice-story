@@ -1,6 +1,7 @@
 // src/pages/api/story-generations/index.ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import { InitGenerationSchema, ListGenerationsSchema } from "../../../lib/schemas/storyGenerationSchemas";
 import * as storyGenerationService from "../../../lib/services/storyGenerationService";
 import { DEFAULT_USER_ID } from "../../../db/supabase.client";
@@ -67,14 +68,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
       }
 
       // Generic error
-      console.error("Error initiating story generation:", error);
+      logError("Error initiating story generation:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error("Unexpected error in POST /api/story-generations:", error);
+    logError("Unexpected error in POST /api/story-generations:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -129,14 +130,14 @@ export const GET: APIRoute = async ({ url, locals }) => {
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Error listing story generations:", error);
+      logError("Error listing story generations:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error("Unexpected error in GET /api/story-generations:", error);
+    logError("Unexpected error in GET /api/story-generations:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

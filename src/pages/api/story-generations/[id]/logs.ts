@@ -1,6 +1,7 @@
 // src/pages/api/story-generations/[id]/logs.ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import { GetLogsSchema, GetLogsQuerySchema } from "../../../../lib/schemas/storyGenerationSchemas";
 import * as generationLogService from "../../../../lib/services/generationLogService";
 import * as storyGenerationService from "../../../../lib/services/storyGenerationService";
@@ -89,14 +90,14 @@ export const GET: APIRoute = async ({ params, url, locals }) => {
       });
     } catch (error) {
       // Handle service errors
-      console.error("Error fetching generation logs:", error);
+      logError("Error fetching generation logs:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error("Unexpected error in GET /api/story-generations/:id/logs:", error);
+    logError("Unexpected error in GET /api/story-generations/:id/logs:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

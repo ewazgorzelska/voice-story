@@ -5,6 +5,7 @@ import type { VoiceSampleDto } from "../../../types";
 import { createVoiceSampleSchema } from "../../../lib/schemas/voiceSampleSchemas";
 import { createVoiceSample } from "../../../lib/services/voiceSampleService";
 import { ZodError } from "zod";
+import { logError } from "@/lib/logger";
 
 export const prerender = false;
 
@@ -48,7 +49,7 @@ export const GET: APIRoute = async ({ locals }) => {
       .maybeSingle();
 
     if (fetchError) {
-      console.error("Error fetching voice sample:", fetchError);
+      logError("Error fetching voice sample:", fetchError);
       return new Response(
         JSON.stringify({
           message: "Failed to fetch voice sample",
@@ -85,7 +86,7 @@ export const GET: APIRoute = async ({ locals }) => {
       },
     });
   } catch (error) {
-    console.error("Error in GET /api/voice-sample:", error);
+    logError("Error in GET /api/voice-sample:", error);
     return new Response(
       JSON.stringify({
         message: "Internal server error",
@@ -142,7 +143,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     formData = await request.formData();
   } catch (error) {
-    console.error("Error parsing form data:", error);
+    logError("Error parsing form data:", error);
     return new Response(
       JSON.stringify({
         message: "Invalid form data",
@@ -204,7 +205,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     });
 
     if (uploadErr) {
-      console.error("Storage upload error:", uploadErr);
+      logError("Storage upload error:", uploadErr);
       throw new Error(`Upload failed: ${uploadErr.message}`);
     }
 
@@ -212,7 +213,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { data: urlData } = locals.supabase.storage.from("voice-samples").getPublicUrl(path);
     audioUrl = urlData.publicUrl;
   } catch (error) {
-    console.error("Error uploading audio file:", error);
+    logError("Error uploading audio file:", error);
     return new Response(
       JSON.stringify({
         message: "Failed to upload audio file",
@@ -275,7 +276,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       },
     });
   } catch (error) {
-    console.error("Error creating voice sample:", error);
+    logError("Error creating voice sample:", error);
 
     // Handle specific error cases
     if (error instanceof Error) {

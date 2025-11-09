@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { VoiceSampleDto, CreateVoiceSampleCommand, VerifyVoiceSampleResponseDto } from "../../types";
+import { logError } from "@/lib/logger";
 import { createVoiceModel } from "./elevenlabsService";
 
 /**
@@ -49,7 +50,7 @@ export async function createVoiceSample(
     .maybeSingle();
 
   if (checkError) {
-    console.error("Error checking existing voice sample:", checkError);
+    logError("Error checking existing voice sample:", checkError);
     throw new Error("Failed to check existing voice sample");
   }
 
@@ -62,7 +63,7 @@ export async function createVoiceSample(
   try {
     elevenlabsVoiceId = await createVoiceModel(command.audio_url, `user_${userId.substring(0, 8)}`);
   } catch (error) {
-    console.error("ElevenLabs API error:", error);
+    logError("ElevenLabs API error:", error);
     throw new Error("VOICE_SERVICE_UNAVAILABLE");
   }
 
@@ -79,7 +80,7 @@ export async function createVoiceSample(
     .single();
 
   if (insertError || !newSample) {
-    console.error("Error inserting voice sample:", insertError);
+    logError("Error inserting voice sample:", insertError);
     throw new Error("Failed to create voice sample");
   }
 
@@ -110,7 +111,7 @@ export async function verifyVoiceSample(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("Error fetching voice sample:", fetchError);
+    logError("Error fetching voice sample:", fetchError);
     throw new Error("Failed to fetch voice sample");
   }
 
@@ -131,7 +132,7 @@ export async function verifyVoiceSample(
     .single();
 
   if (updateError || !updatedSample) {
-    console.error("Error updating voice sample:", updateError);
+    logError("Error updating voice sample:", updateError);
     throw new Error("Failed to update voice sample");
   }
 

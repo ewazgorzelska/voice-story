@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { logError } from "@/lib/logger";
 import type {
   GenerationState,
   CreateStoryGenerationCommand,
@@ -56,15 +58,21 @@ export function useStoryGeneration({
   /**
    * Validates generation data from API
    */
-  const validateGenerationData = (data: any): data is StoryGenerationDto => {
+  const validateGenerationData = (data: unknown): data is StoryGenerationDto => {
+    if (typeof data !== "object" || data === null) {
+      return false;
+    }
+
+    const candidate = data as Partial<StoryGenerationDto>;
     const validStatuses = ["pending", "in_progress", "completed", "failed"];
     return (
-      typeof data.id === "string" &&
-      typeof data.story_id === "string" &&
-      validStatuses.includes(data.status) &&
-      typeof data.progress === "number" &&
-      data.progress >= 0 &&
-      data.progress <= 100
+      typeof candidate.id === "string" &&
+      typeof candidate.story_id === "string" &&
+      typeof candidate.status === "string" &&
+      validStatuses.includes(candidate.status) &&
+      typeof candidate.progress === "number" &&
+      candidate.progress >= 0 &&
+      candidate.progress <= 100
     );
   };
 
@@ -121,7 +129,7 @@ export function useStoryGeneration({
 
         // Validate response data
         if (!validateGenerationData(data)) {
-          console.error("Invalid data structure:", data);
+          logError("Invalid data structure:", data);
           throw new Error("Invalid data from API");
         }
 
@@ -162,7 +170,7 @@ export function useStoryGeneration({
           }));
         }
       } catch (error) {
-        console.error("Polling error:", error);
+        logError("Polling error:", error);
         retryCountRef.current += 1;
 
         // Stop polling after max retries
@@ -317,7 +325,7 @@ export function useStoryGeneration({
       // Start polling for progress
       startPolling(data.id);
     } catch (error) {
-      console.error("Error starting generation:", error);
+      logError("Error starting generation:", error);
       setState((prev) => ({
         ...prev,
         isGenerating: false,
@@ -372,4 +380,3 @@ export function useStoryGeneration({
     resetError,
   };
 }
-

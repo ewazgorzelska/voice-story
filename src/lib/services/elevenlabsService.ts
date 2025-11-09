@@ -7,6 +7,8 @@
  * It requires an ElevenLabs API key to be configured in environment variables.
  */
 
+import { logError, logInfo } from "@/lib/logger";
+
 /**
  * Creates a voice model in ElevenLabs from an audio URL
  *
@@ -19,7 +21,7 @@ export async function createVoiceModel(audioUrl: string, name?: string): Promise
   const apiKey = import.meta.env.ELEVENLABS_API_KEY;
 
   if (!apiKey) {
-    console.error("ElevenLabs API key not configured");
+    logError("ElevenLabs API key not configured");
     throw new Error("Voice service not configured");
   }
 
@@ -36,12 +38,12 @@ export async function createVoiceModel(audioUrl: string, name?: string): Promise
     //   throw new Error('Audio URL domain not allowed');
     // }
   } catch (error) {
-    console.error("Invalid audio URL:", error);
+    logError("Invalid audio URL:", error);
     throw new Error("Invalid audio URL format");
   }
 
   try {
-    console.log("Creating voice model for audio URL:", audioUrl, "with name:", name);
+    logInfo("Creating voice model for audio URL:", audioUrl, "with name:", name);
     // TODO: Implement actual ElevenLabs API call
     // Example implementation:
     // const response = await fetch('https://api.elevenlabs.io/v1/voices/add', {
@@ -67,11 +69,11 @@ export async function createVoiceModel(audioUrl: string, name?: string): Promise
     // return data.voice_id;
 
     // Placeholder implementation for development
-    console.log("Creating voice model for audio URL:", audioUrl);
+    logInfo("Creating voice model for audio URL:", audioUrl);
     const voiceId = `voice_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     return voiceId;
   } catch (error) {
-    console.error("Error calling ElevenLabs API:", error);
+    logError("Error calling ElevenLabs API:", error);
     throw new Error("Failed to create voice model");
   }
 }
@@ -95,7 +97,7 @@ export async function validateAudioUrl(audioUrl: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("Error validating audio URL:", error);
+    logError("Error validating audio URL:", error);
     return false;
   }
 }

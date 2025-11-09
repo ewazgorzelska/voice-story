@@ -1,6 +1,7 @@
 // src/pages/api/story-generations/[id].ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import { GetByIdSchema, DeleteGenerationSchema } from "../../../../lib/schemas/storyGenerationSchemas";
 import * as storyGenerationService from "../../../../lib/services/storyGenerationService";
 import { DEFAULT_USER_ID } from "../../../../db/supabase.client";
@@ -57,14 +58,14 @@ export const GET: APIRoute = async ({ params, locals }) => {
       }
 
       // Generic error
-      console.error("Error retrieving story generation:", error);
+      logError("Error retrieving story generation:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error("Unexpected error in GET /api/story-generations/:id:", error);
+    logError("Unexpected error in GET /api/story-generations/:id:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
@@ -130,14 +131,14 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
       }
 
       // Generic error
-      console.error("Error deleting story generation:", error);
+      logError("Error deleting story generation:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error("Unexpected error in DELETE /api/story-generations/:id:", error);
+    logError("Unexpected error in DELETE /api/story-generations/:id:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

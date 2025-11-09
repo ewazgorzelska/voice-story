@@ -1,6 +1,7 @@
 // src/lib/services/storyService.ts
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { StorySummaryDto, StoryDto, PaginationMetaDto } from "../../types";
+import { logError } from "@/lib/logger";
 
 /**
  * Service layer for Story Library operations
@@ -29,7 +30,7 @@ export async function getStories(
   const { count, error: countError } = await supabase.from("stories").select("*", { count: "exact", head: true });
 
   if (countError) {
-    console.error("[storyService.getStories] Failed to count stories:", countError);
+    logError("[storyService.getStories] Failed to count stories:", countError);
     throw new Error("Failed to retrieve story count");
   }
 
@@ -43,7 +44,7 @@ export async function getStories(
     .range(from, to);
 
   if (error) {
-    console.error("[storyService.getStories] Failed to fetch stories:", error);
+    logError("[storyService.getStories] Failed to fetch stories:", error);
     throw new Error("Failed to retrieve stories");
   }
 
@@ -71,7 +72,7 @@ export async function getStoryBySlug(supabase: SupabaseClient, slug: string): Pr
     if (error.code === "PGRST116") {
       return null;
     }
-    console.error("[storyService.getStoryBySlug] Failed to fetch story:", error);
+    logError("[storyService.getStoryBySlug] Failed to fetch story:", error);
     throw new Error("Failed to retrieve story");
   }
 

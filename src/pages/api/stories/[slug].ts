@@ -1,6 +1,7 @@
 // src/pages/api/stories/[slug].ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import { GetStoryBySlugParamsSchema } from "../../../lib/schemas/storySchemas";
 import { getStoryBySlug } from "../../../lib/services/storyService";
 import type { StoryDto } from "../../../types";
@@ -58,7 +59,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[GET /api/stories/:slug] Unhandled error:", error);
+    logError("[GET /api/stories/:slug] Unhandled error:", error);
     return new Response(
       JSON.stringify({
         error: "Internal server error",

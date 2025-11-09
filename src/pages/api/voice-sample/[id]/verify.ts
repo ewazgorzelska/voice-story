@@ -1,6 +1,7 @@
 // src/pages/api/voice-sample/[id]/verify.ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import type { VerifyVoiceSampleResponseDto } from "../../../../types";
 import { verifyVoiceSampleSchema, voiceSampleIdSchema } from "../../../../lib/schemas/voiceSampleSchemas";
 import { verifyVoiceSample } from "../../../../lib/services/voiceSampleService";
@@ -68,7 +69,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
   try {
     requestBody = await request.json();
   } catch (error) {
-    console.error("Error parsing JSON in request body:", error);
+    logError("Error parsing JSON in request body:", error);
     return new Response(
       JSON.stringify({
         message: "Invalid JSON in request body",
@@ -142,7 +143,7 @@ export const PATCH: APIRoute = async ({ params, request, locals }) => {
       },
     });
   } catch (error) {
-    console.error("Error verifying voice sample:", error);
+    logError("Error verifying voice sample:", error);
 
     // Handle specific error cases
     if (error instanceof Error) {

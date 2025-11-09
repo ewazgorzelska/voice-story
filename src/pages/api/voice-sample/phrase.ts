@@ -1,6 +1,7 @@
 // src/pages/api/voice-sample/phrase.ts
 
 import type { APIRoute } from "astro";
+import { logError } from "@/lib/logger";
 import type { GetVoiceSamplePhraseResponseDto } from "../../../types";
 import { getRandomPhrase } from "../../../lib/services/voiceSampleService";
 
@@ -30,7 +31,7 @@ export const GET: APIRoute = async () => {
       },
     });
   } catch (error) {
-    console.error("Error getting verification phrase:", error);
+    logError("Error getting verification phrase:", error);
 
     return new Response(
       JSON.stringify({

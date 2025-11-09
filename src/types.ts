@@ -95,6 +95,135 @@ export type GetStoryGenerationResponseDto = StoryGenerationDto;
 //#endregion
 
 //
+//#region My Library View Models
+
+/** Enriched generation DTO with story title for display */
+export interface EnrichedGenerationDto extends StoryGenerationDto {
+  /** Story title from stories table */
+  story_title: string;
+}
+
+/** Audio player internal state */
+export interface AudioPlayerState {
+  /** Whether audio is currently playing */
+  isPlaying: boolean;
+  /** Current playback time in seconds */
+  currentTime: number;
+  /** Total duration in seconds */
+  duration: number;
+  /** Volume level (0.0 to 1.0) */
+  volume: number;
+  /** Whether audio is loading */
+  isLoading: boolean;
+  /** Error message if audio failed to load */
+  error: string | null;
+}
+
+/** Props for MyLibraryView component */
+export interface MyLibraryViewProps {
+  /** Initial page number (1-indexed) */
+  initialPage?: number;
+  /** Number of items per page */
+  pageSize?: number;
+}
+
+/** Props for LibraryGrid component */
+export interface LibraryGridProps {
+  /** Array of enriched generation data */
+  generations: EnrichedGenerationDto[];
+  /** Whether data is currently loading */
+  isLoading: boolean;
+  /** Number of items per page (for skeleton count) */
+  pageSize: number;
+  /** ID of currently playing audio (null if none) */
+  activeAudioId: string | null;
+  /** Handler for play action */
+  onPlay: (id: string, url: string) => void;
+  /** Handler for pause action */
+  onPause: (id: string) => void;
+  /** Register audio element for centralized playback control */
+  registerAudio?: (id: string, audioElement: HTMLAudioElement) => void;
+  /** Unregister audio element when unmounted */
+  unregisterAudio?: (id: string) => void;
+  /** Handler for delete action */
+  onDelete: (id: string) => void;
+}
+
+/** Props for GeneratedStoryCard component */
+export interface GeneratedStoryCardProps {
+  /** Generation data with enriched story title */
+  generation: EnrichedGenerationDto;
+  /** Whether this card's audio is currently active */
+  isAudioActive: boolean;
+  /** Register audio element for centralized playback control */
+  registerAudio?: (id: string, audioElement: HTMLAudioElement) => void;
+  /** Unregister audio element when unmounted */
+  unregisterAudio?: (id: string) => void;
+  /** Handler for play action */
+  onPlay: (id: string, url: string) => void;
+  /** Handler for pause action */
+  onPause: (id: string) => void;
+  /** Handler for delete action */
+  onDelete: (id: string) => void;
+}
+
+/** Props for AudioPlayer component */
+export interface AudioPlayerProps {
+  /** URL of the audio file to play */
+  audioUrl: string;
+  /** Whether this audio player is currently active */
+  isActive: boolean;
+  /** Handler called when play is triggered */
+  onPlay: () => void;
+  /** Handler called when pause is triggered */
+  onPause: () => void;
+}
+
+/** Props for StatusBadge component */
+export interface StatusBadgeProps {
+  /** Current generation status */
+  status: GenerationStatus;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+/** Props for ProgressDisplay component */
+export interface ProgressDisplayProps {
+  /** Progress percentage (0-100) */
+  progress: number;
+  /** Current generation status */
+  status: GenerationStatus;
+}
+
+/** Props for DeleteConfirmationDialog component */
+export interface DeleteConfirmationDialogProps {
+  /** Whether dialog is open */
+  isOpen: boolean;
+  /** Generation to be deleted (null if none) */
+  generation: EnrichedGenerationDto | null;
+  /** Whether deletion is in progress */
+  isDeleting: boolean;
+  /** Error message if deletion failed */
+  error: string | null;
+  /** Handler for confirm action */
+  onConfirm: () => Promise<void>;
+  /** Handler for cancel action */
+  onCancel: () => void;
+}
+
+/** Props for EmptyLibraryState component */
+export interface EmptyLibraryStateProps {
+  /** Custom message to display */
+  message?: string;
+  /** CTA button text */
+  ctaText?: string;
+  /** CTA button href */
+  ctaHref?: string;
+}
+
+//#endregion
+
+//
 //#region Generation Logs (Internal)
 
 /** DB row shortcut */

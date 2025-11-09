@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "../../db/supabase.client";
 import type { CreateStoryGenerationResponseDto, StoryGenerationDto, GetStoryGenerationsResponseDto } from "../../types";
+import { logError } from "@/lib/logger";
 
 /**
  * Story Generation Service
@@ -42,7 +43,7 @@ export async function initiate(
     .single();
 
   if (insertError || !generation) {
-    console.error("Failed to create story generation:", insertError);
+    logError("Failed to create story generation:", insertError);
     throw new Error("Failed to create story generation");
   }
 
@@ -92,7 +93,7 @@ export async function list(
   const { data, error, count } = await query;
 
   if (error) {
-    console.error("Failed to list story generations:", error);
+    logError("Failed to list story generations:", error);
     throw new Error("Failed to list story generations");
   }
 
@@ -181,7 +182,7 @@ export async function remove(supabase: SupabaseClient, userId: string, generatio
     .eq("user_id", userId);
 
   if (deleteError) {
-    console.error("Failed to delete story generation:", deleteError);
+    logError("Failed to delete story generation:", deleteError);
     throw new Error("Failed to delete story generation");
   }
 }
