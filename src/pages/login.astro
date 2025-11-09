@@ -3,10 +3,10 @@ import AuthLayout from "@/layouts/AuthLayout.astro";
 import LoginForm from "@/components/auth/LoginForm";
 
 // Note: In the future, this page will check for existing session and redirect
-// authenticated users to /library. For now, we show the login form.
+// authenticated users to /library. For now, we're just rendering the form.
 ---
 
-<AuthLayout title="Voice Story - Sign In">
+<AuthLayout title="Sign In - Voice Story">
   <div class="w-full max-w-md">
     <LoginForm client:load />
   </div>

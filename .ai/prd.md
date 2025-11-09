@@ -13,6 +13,7 @@ Parents often seek new and engaging ways to connect with their children, especia
 ### 3.1. User Authentication
 
 - Users must be able to register for a new account using an email and password.
+- Users must be able to recover forgotten passsword.
 - Registered users must be able to log in to their account.
 - The system must securely store user credentials.
 
@@ -166,6 +167,28 @@ The following features are explicitly out of scope for the MVP:
   - And I click the "Register" button
   - Then an error message is displayed stating "This email is already registered"
   - And I remain on the registration page.
+
+- ID: US-011
+- Title: Recover the Forgotten Pasword
+- Description: As a user, I want to be able to recover my password.
+- Acceptance Criteria:
+  - Given I am on the login page
+  - When I click the Forgotten pasword button
+  - I am notified that my password has been reset and to check my email
+  - When I click the link sent by e-mail from supabase
+  - I am redirected back to the app to the new password view
+  - When I enter the new password and click on the Save button
+  - Then I am notified that the password has been successfully updated
+
+- ID: US-012
+- Title: Safe Access
+- Description: As a user, I want to be able to log in the system in a safe manner that would keep my personal data (in particular my voice stories) secured.
+- Acceptance Criteria:
+  - An unauthenticated user can access the login, registration, and password recovery pages.
+  - An unauthenticated user cannot access other pages related to story generation functionalities.
+  - The user can log out of the system via a dedicated button in the navigation menu.
+  - Login and registration are handled on dedicated pages.
+  - Password recovery should be possible.
 
 ## 6. Success Metrics
 

@@ -29,7 +29,11 @@ export async function initiate(
   command: CreateStoryGenerationCommand
 ): Promise<CreateStoryGenerationResponseDto> {
   // First, verify the story exists and is accessible
-  const { data: story, error: storyError } = await supabase.from("stories").select("id").eq("id", command.story_id).single();
+  const { data: story, error: storyError } = await supabase
+    .from("stories")
+    .select("id")
+    .eq("id", command.story_id)
+    .single();
 
   if (storyError || !story) {
     throw new Error("Story not found");

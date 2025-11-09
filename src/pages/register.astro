@@ -1,0 +1,13 @@
+---
+import AuthLayout from "@/layouts/AuthLayout.astro";
+import RegisterForm from "@/components/auth/RegisterForm";
+
+// Note: In the future, this page will check for existing session and redirect
+// authenticated users to /library. For now, we're just rendering the form.
+---
+
+<AuthLayout title="Sign Up - Voice Story">
+  <div class="w-full max-w-md">
+    <RegisterForm client:load />
+  </div>
+</AuthLayout>
