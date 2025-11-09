@@ -1,9 +1,15 @@
 ---
+import LogoutButton from "@/components/auth/LogoutButton";
+
 interface NavBarProps {
   currentPath: string;
+  user?: {
+    id: string;
+    email: string | null;
+  } | null;
 }
 
-const { currentPath } = Astro.props as NavBarProps;
+const { currentPath, user = null } = Astro.props as NavBarProps;
 
 const links = [
   { href: "/stories", label: "Story Library" },
@@ -26,6 +32,9 @@ const linkClasses = (href: string) =>
       ? "bg-primary/10 text-primary shadow-sm"
       : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
   ].join(" ");
+
+const isAuthenticated = Boolean(user);
+const userEmail = user?.email ?? null;
 ---
 
 <header
@@ -33,14 +42,47 @@ const linkClasses = (href: string) =>
 >
   <nav class="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
     <a href="/" class="text-base font-semibold tracking-tight text-foreground"> Voice Story </a>
-    <div class="flex items-center gap-2 sm:gap-4">
-      {
-        links.map((link) => (
-          <a href={link.href} class={linkClasses(link.href)} aria-current={isActive(link.href) ? "page" : undefined}>
-            {link.label}
-          </a>
-        ))
-      }
+    <div class="flex items-center gap-3 sm:gap-5">
+      <div class="flex items-center gap-2 sm:gap-4">
+        {
+          links.map((link) => (
+            <a href={link.href} class={linkClasses(link.href)} aria-current={isActive(link.href) ? "page" : undefined}>
+              {link.label}
+            </a>
+          ))
+        }
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3 whitespace-nowrap">
+        {
+          isAuthenticated ? (
+            <>
+              {userEmail ? (
+                <span class="hidden text-sm text-muted-foreground md:inline">
+                  Signed in as <span class="font-medium text-foreground">{userEmail}</span>
+                </span>
+              ) : null}
+              <LogoutButton client:idle />
+            </>
+          ) : (
+            <>
+              <a
+                href="/login"
+                class={linkClasses("/login")}
+                aria-current={isActive("/login") ? "page" : undefined}
+              >
+                Sign in
+              </a>
+              <a
+                href="/register"
+                class={linkClasses("/register")}
+                aria-current={isActive("/register") ? "page" : undefined}
+              >
+                Sign up
+              </a>
+            </>
+          )
+        }
+      </div>
     </div>
   </nav>
 </header>

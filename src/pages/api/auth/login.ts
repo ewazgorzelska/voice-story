@@ -1,129 +1,173 @@
 import type { APIRoute } from "astro";
-
-import { createSupabaseServerInstance } from "@/db/supabase.client";
+import { ZodError } from "zod";
 import { loginSchema } from "@/lib/validation/authSchemas";
+import { logError } from "@/lib/logger";
 
 export const prerender = false;
 
-const jsonResponse = (body: unknown, status: number) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+type LoginPayload = {
+  email: string;
+  password: string;
+};
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+const jsonHeaders = {
+  "Content-Type": "application/json",
+};
+
+const buildFieldErrors = (error: ZodError<LoginPayload>) => {
+  const fieldErrors: Record<string, string[]> = {};
+
+  for (const issue of error.issues) {
+    const field = issue.path[0];
+
+    if (typeof field !== "string") {
+      continue;
+    }
+
+    if (!fieldErrors[field]) {
+      fieldErrors[field] = [];
+    }
+
+    fieldErrors[field].push(issue.message);
+  }
+
+  return fieldErrors;
+};
+
+export const POST: APIRoute = async ({ request, locals }) => {
+  if (!locals?.supabase) {
+    logError("Supabase client is unavailable in POST /api/auth/login");
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: {
+          code: "SUPABASE_CLIENT_UNAVAILABLE",
+          message: "Unable to complete sign in.",
+        },
+      }),
+      {
+        status: 500,
+        headers: jsonHeaders,
+      }
+    );
+  }
+
   let payload: unknown;
-
   try {
     payload = await request.json();
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to parse login payload", error);
-    return jsonResponse(
-      {
+    logError("Invalid JSON payload received in POST /api/auth/login:", error);
+
+    return new Response(
+      JSON.stringify({
         success: false,
         error: {
-          code: "INVALID_INPUT",
-          message: "Invalid request body.",
+          code: "INVALID_JSON",
+          message: "Request body must be valid JSON.",
         },
-      },
-      400
+      }),
+      {
+        status: 400,
+        headers: jsonHeaders,
+      }
     );
   }
 
-  const parsedPayload = loginSchema.safeParse(payload);
+  const validationResult = loginSchema.safeParse(payload);
 
-  if (!parsedPayload.success) {
-    return jsonResponse(
-      {
+  if (!validationResult.success) {
+    return new Response(
+      JSON.stringify({
         success: false,
         error: {
           code: "INVALID_INPUT",
-          message: "Please check the provided credentials.",
-          details: parsedPayload.error.flatten(),
+          message: "Please correct the highlighted errors and try again.",
+          details: {
+            fieldErrors: buildFieldErrors(validationResult.error),
+          },
         },
-      },
-      400
+      }),
+      {
+        status: 422,
+        headers: jsonHeaders,
+      }
     );
   }
 
-  const supabase = createSupabaseServerInstance({
-    cookies,
-    headers: request.headers,
-  });
+  const { email, password } = validationResult.data;
 
   try {
     const {
       data: { user },
       error,
-    } = await supabase.auth.signInWithPassword({
-      email: parsedPayload.data.email,
-      password: parsedPayload.data.password,
+    } = await locals.supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
     if (error || !user) {
-      return jsonResponse(
-        {
+      if (error?.name !== "AuthApiError") {
+        logError("Supabase sign in error:", error);
+      }
+
+      return new Response(
+        JSON.stringify({
           success: false,
           error: {
             code: "INVALID_CREDENTIALS",
             message: "Invalid email or password.",
           },
-        },
-        400
+        }),
+        {
+          status: 401,
+          headers: jsonHeaders,
+        }
       );
     }
 
-    const { data: voiceSample, error: voiceSampleError } = await supabase
+    let redirectPath = "/stories";
+
+    const { data: voiceSample, error: voiceSampleError } = await locals.supabase
       .from("voice_samples")
       .select("id")
       .eq("user_id", user.id)
       .maybeSingle();
 
     if (voiceSampleError) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to determine voice sample status", voiceSampleError);
-      return jsonResponse(
-        {
-          success: false,
-          error: {
-            code: "VOICE_SAMPLE_CHECK_FAILED",
-            message: "Something went wrong. Please try again or contact support.",
-          },
-        },
-        500
-      );
+      logError("Failed to fetch voice sample during POST /api/auth/login:", voiceSampleError);
+    } else if (!voiceSample) {
+      redirectPath = "/voice-sample";
     }
 
-    const redirectPath = voiceSample ? "/stories" : "/voice-sample";
-
-    return jsonResponse(
-      {
+    return new Response(
+      JSON.stringify({
         success: true,
         data: {
-          user: {
-            id: user.id,
-            email: user.email,
-          },
           redirectPath,
         },
-      },
-      200
+      }),
+      {
+        status: 200,
+        headers: jsonHeaders,
+      }
     );
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Unexpected error during login", error);
-    return jsonResponse(
-      {
+    logError("Unexpected error during POST /api/auth/login:", error);
+
+    return new Response(
+      JSON.stringify({
         success: false,
         error: {
-          code: "UNKNOWN_ERROR",
-          message: "Something went wrong. Please try again or contact support.",
+          code: "UNEXPECTED_ERROR",
+          message: "Something went wrong while signing in. Please try again.",
         },
-      },
-      500
+      }),
+      {
+        status: 500,
+        headers: jsonHeaders,
+      }
     );
   }
 };
+

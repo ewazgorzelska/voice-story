@@ -8,6 +8,8 @@ interface Props {
 }
 
 const { title = "10x Astro Starter", hideNav = false } = Astro.props;
+const user = Astro.locals.user ?? null;
+const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -20,7 +22,7 @@ const { title = "10x Astro Starter", hideNav = false } = Astro.props;
     <title>{title}</title>
   </head>
   <body>
-    {hideNav ? null : <NavBar currentPath={Astro.url.pathname} />}
+    {hideNav ? null : <NavBar currentPath={currentPath} user={user} />}
     <slot />
   </body>
 </html>
