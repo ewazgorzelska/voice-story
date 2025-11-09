@@ -34,7 +34,7 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 
 - View path: `/stories`
 - Main purpose: Browse available stories to select for generation
-- Key information: Story cards with title, thumbnail, pagination controls (GET `/api/stories`), inline message as feedback
+- Key information: Story cards with title, thumbnail, baseline description, pagination controls (GET `/api/stories`), inline message as feedback
 - Key components: `Card`, `Button`, `Pagination`, `Skeleton`
 - UX/accessibility/security: Keyboard navigation through cards, focus-visible focus states, alt text on thumbnails
 
@@ -42,16 +42,16 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 
 - View path: `/stories/[slug]`
 - Main purpose: Display story content and initiate generation
-- Key information: Story text preview, “Generate” button, real-time progress (polling GET `/api/story-generations/:id`), inline message as feedback
-- Key components: `Button`, `ProgressBar`
-- UX/accessibility/security: Accessible progress bar with ARIA attributes, disable repeated submissions, rate-limit feedback
+- Key information: Story text preview, preference form collecting child age, minimum/maximum audio duration, optional motif prompt (remaining characters indicator), “Generate” button, real-time progress (polling GET `/api/story-generations/:id`), inline message as feedback
+- Key components: `StoryPreferencesForm`, `Input`, `Textarea`, `Button`, `ProgressBar`
+- UX/accessibility/security: Accessible progress bar with ARIA attributes, inline validation messages for required fields, enforce numeric inputs with min/max constraints, disable repeated submissions, rate-limit feedback
 
 ### 2.6 My Library View
 
 - View path: `/my-library`
 - Main purpose: List generated stories for playback and management
-- Key information: Generated story cards with play, pause, delete actions (GET `/api/story-generations`; DELETE endpoint)
-- Key components: `AudioPlayer`, `Card`, `Button`, `ConfirmationDialog`, `Skeleton`
+- Key information: Generated story cards with teaser summary, display of child age and duration range, play, pause, delete actions (GET `/api/story-generations`; DELETE endpoint)
+- Key components: `AudioPlayer`, `Card`, `Button`, `ConfirmationDialog`, `Skeleton`, `Tag`
 - UX/accessibility/security: Keyboard-accessible controls, confirmation on delete, ARIA live region for status updates
 
 ### 2.7 Error Views
@@ -88,6 +88,8 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 - **Card**: Standardized layout for story and library items.
 - **ProgressBar**: Accessible component showing generation status.
 - **Form**: Wrapper with validation integration (React Hook Form + Zod).
+- **StoryPreferencesForm**: Form island encapsulating age, duration, and motif inputs with validation and character counter.
+- **Tag**: Badge-style component for showing metadata (e.g., age, duration range, motif keywords).
 - **Skeleton**: Loading placeholder for cards and lists.
 - **Toast**: Global notifications for success/error states.
 - **ErrorBoundary**: Catches runtime errors and displays fallback UI.

@@ -26,8 +26,11 @@ Parents often seek new and engaging ways to connect with their children, especia
 ### 3.3. Story Library and Generation
 
 - The application will provide a predefined library of 5-10 classic fairy tales.
-- The story content will be hardcoded on the backend.
+- The backend will use the OpenRouter API to generate personalized story scripts tailored to user preferences while keeping the library as the starting point.
 - Users can browse and select a story from the library to generate an audio version.
+- Before starting generation, users must provide the child's age and desired minimum and maximum audio duration (in whole minutes); these inputs are mandatory and validated.
+- Users may optionally enter a thematic prompt (up to 200 characters) describing the key motif of the story (e.g., “a sad dragon and a wise princess”).
+- Each generation request must return a concise teaser/summary of the story to display on the selection page in addition to the full audio.
 - During story generation, a progress indicator with an estimated completion time will be displayed.
 
 ### 3.4. User Library and Playback
@@ -61,7 +64,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: New User Registration
 - Description: As a new user, I want to create an account using my email and password so that I can access the application.
 - Acceptance Criteria:
-
   - Given I am a new user on the registration page
   - When I enter a valid email and a password
   - And I click the "Register" button
@@ -72,7 +74,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: Existing User Login
 - Description: As a registered user, I want to log in with my email and password so that I can access my account and stories.
 - Acceptance Criteria:
-
   - Given I am a registered user on the login page
   - When I enter my correct email and password
   - And I click the "Log In" button
@@ -83,7 +84,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: User Logout
 - Description: As a logged-in user, I want to log out of the application to secure my account.
 - Acceptance Criteria:
-
   - Given I am a logged-in user
   - When I click the "Logout" button
   - Then my session is terminated
@@ -93,7 +93,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: Voice Sample Recording
 - Description: As a new user, I want to record a short voice sample so that the application can clone my voice for story narration.
 - Acceptance Criteria:
-
   - Given I am a logged-in user who has not yet provided a voice sample
   - When I start the voice recording process
   - Then I am presented with a randomly generated phrase to read
@@ -106,27 +105,35 @@ The following features are explicitly out of scope for the MVP:
 - Title: Browse Story Library
 - Description: As a user, I want to browse the available stories so I can choose one to generate.
 - Acceptance Criteria:
-
   - Given I am a logged-in user
   - When I navigate to the story library
   - Then I see a list of 5-10 available stories with their titles.
 
 - ID: US-006
 - Title: Story Generation
-- Description: As a user, I want to select a story and generate an audio version with my cloned voice.
+- Description: As a user, I want to select a story and generate an audio version with my cloned voice based on my child’s preferences.
 - Acceptance Criteria:
-
   - Given I am a logged-in user with a saved voice sample
-  - When I select a story from the library and click "Generate"
-  - Then the story generation process begins
+  - When I select a story from the library, provide the child's age, enter the desired minimum and maximum audio duration, optionally add a motif description of up to 200 characters, and click "Generate"
+  - Then the story generation process begins using the OpenRouter API
   - And a progress indicator is displayed with an estimated time
+  - And the generated story includes a teaser summary stored alongside the audio
   - When the process is complete, the new story appears in "My Library".
+
+- ID: US-011
+- Title: Provide Story Preferences
+- Description: As a user, I want to specify key preferences for the generated story so that the narration matches my child’s needs.
+- Acceptance Criteria:
+  - Given I am a logged-in user preparing to generate a story
+  - When I enter the child's age and minimum/maximum audio duration (in minutes)
+  - And I optionally enter a motif description up to 200 characters
+  - Then the system validates the inputs before allowing submission
+  - And the stored preferences are included in the OpenRouter request for generating the story content.
 
 - ID: US-007
 - Title: Access Personal Library
 - Description: As a user, I want to view all the stories I have generated in one place.
 - Acceptance Criteria:
-
   - Given I am a logged-in user
   - When I navigate to the "My Library" section
   - Then I see a list of all the stories I have previously generated.
@@ -135,7 +142,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: Play a Generated Story
 - Description: As a user, I want to play a generated story so my child can listen to it.
 - Acceptance Criteria:
-
   - Given I am in my personal library
   - When I click the "Play" button on a story
   - Then the audio begins to play
@@ -145,7 +151,6 @@ The following features are explicitly out of scope for the MVP:
 - Title: Invalid Login Attempt
 - Description: As a user, I want to see an error message if I try to log in with incorrect credentials.
 - Acceptance Criteria:
-
   - Given I am on the login page
   - When I enter an incorrect email or password
   - And I click the "Log In" button

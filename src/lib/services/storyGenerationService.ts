@@ -1,7 +1,12 @@
 // src/lib/services/storyGenerationService.ts
 
 import type { SupabaseClient } from "../../db/supabase.client";
-import type { CreateStoryGenerationResponseDto, StoryGenerationDto, GetStoryGenerationsResponseDto } from "../../types";
+import type {
+  CreateStoryGenerationCommand,
+  CreateStoryGenerationResponseDto,
+  StoryGenerationDto,
+  GetStoryGenerationsResponseDto,
+} from "../../types";
 import { logError } from "@/lib/logger";
 
 /**
@@ -21,10 +26,10 @@ import { logError } from "@/lib/logger";
 export async function initiate(
   supabase: SupabaseClient,
   userId: string,
-  storyId: string
+  command: CreateStoryGenerationCommand
 ): Promise<CreateStoryGenerationResponseDto> {
   // First, verify the story exists and is accessible
-  const { data: story, error: storyError } = await supabase.from("stories").select("id").eq("id", storyId).single();
+  const { data: story, error: storyError } = await supabase.from("stories").select("id").eq("id", command.story_id).single();
 
   if (storyError || !story) {
     throw new Error("Story not found");
@@ -35,11 +40,15 @@ export async function initiate(
     .from("story_generations")
     .insert({
       user_id: userId,
-      story_id: storyId,
+      story_id: command.story_id,
       status: "pending",
       progress: 0,
+      child_age: command.child_age,
+      duration_min_minutes: command.duration_min_minutes,
+      duration_max_minutes: command.duration_max_minutes,
+      motif_prompt: command.motif_prompt ?? null,
     })
-    .select("id, status, progress")
+    .select("id, status, progress, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt")
     .single();
 
   if (insertError || !generation) {
@@ -54,6 +63,13 @@ export async function initiate(
     id: generation.id,
     status: generation.status,
     progress: generation.progress,
+    teaser: generation.teaser,
+    preferences: {
+      child_age: generation.child_age,
+      duration_min_minutes: generation.duration_min_minutes,
+      duration_max_minutes: generation.duration_max_minutes,
+      motif_prompt: generation.motif_prompt,
+    },
   };
 }
 
@@ -80,7 +96,10 @@ export async function list(
   // Build query
   let query = supabase
     .from("story_generations")
-    .select("id, story_id, status, progress, result_url", { count: "exact" })
+    .select(
+      "id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt",
+      { count: "exact" }
+    )
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .range(offset, offset + pageSize - 1);
@@ -104,6 +123,13 @@ export async function list(
       status: gen.status,
       progress: gen.progress,
       result_url: gen.result_url,
+      teaser: gen.teaser,
+      preferences: {
+        child_age: gen.child_age,
+        duration_min_minutes: gen.duration_min_minutes,
+        duration_max_minutes: gen.duration_max_minutes,
+        motif_prompt: gen.motif_prompt,
+      },
     })),
     meta: {
       page,
@@ -129,7 +155,9 @@ export async function getById(
 ): Promise<StoryGenerationDto> {
   const { data, error } = await supabase
     .from("story_generations")
-    .select("id, story_id, status, progress, result_url")
+    .select(
+      "id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt"
+    )
     .eq("id", generationId)
     .eq("user_id", userId)
     .single();
@@ -144,6 +172,13 @@ export async function getById(
     status: data.status,
     progress: data.progress,
     result_url: data.result_url,
+    teaser: data.teaser,
+    preferences: {
+      child_age: data.child_age,
+      duration_min_minutes: data.duration_min_minutes,
+      duration_max_minutes: data.duration_max_minutes,
+      motif_prompt: data.motif_prompt,
+    },
   };
 }
 

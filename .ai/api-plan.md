@@ -83,11 +83,22 @@
 - Headers: `Authorization: Bearer <token>`
 - Request Body:
   ```json
-  { "story_id": "uuid" }
+  {
+    "story_id": "uuid",
+    "child_age": 5,
+    "duration_min_minutes": 4,
+    "duration_max_minutes": 8,
+    "motif_prompt": "string" // optional, max 200 characters
+  }
   ```
 - Response 202:
   ```json
-  { "id": "uuid", "status": "pending", "progress": 0 }
+  {
+    "id": "uuid",
+    "status": "pending",
+    "progress": 0,
+    "teaser": "string"
+  }
   ```
 
 #### GET /api/story-generations
@@ -99,7 +110,20 @@
   ```json
   {
     "data": [
-      { "id": "uuid", "story_id": "uuid", "status": "enum", "progress": number, "result_url": "string" }
+      {
+        "id": "uuid",
+        "story_id": "uuid",
+        "status": "enum",
+        "progress": number,
+        "result_url": "string",
+        "teaser": "string",
+        "preferences": {
+          "child_age": number,
+          "duration_min_minutes": number,
+          "duration_max_minutes": number,
+          "motif_prompt": "string|null"
+        }
+      }
     ],
     "meta": { "page": number, "pageSize": number, "total": number }
   }
@@ -111,7 +135,19 @@
 - Headers: `Authorization: Bearer <token>`
 - Response 200:
   ```json
-  { "id": "uuid", "status": "enum", "progress": number, "result_url": "string" }
+  {
+    "id": "uuid",
+    "status": "enum",
+    "progress": number,
+    "result_url": "string",
+    "teaser": "string",
+    "preferences": {
+      "child_age": number,
+      "duration_min_minutes": number,
+      "duration_max_minutes": number,
+      "motif_prompt": "string|null"
+    }
+  }
   ```
 - Errors: 404 if not found or not owned
 
@@ -144,7 +180,7 @@
 ## 4. Validation & Business Logic
 
 - **VoiceSample**: Enforce one sample per user (UNIQUE constraint). Validate phrase and file format.
-- **StoryGenerations**: Enforce `story_id` exists. Initialize `status='pending'`, `progress=0`.
+- **StoryGenerations**: Enforce `story_id` exists. Validate `child_age` (integer, 0–18), `duration_min_minutes`/`duration_max_minutes` (integers, 1–30, min < max), `motif_prompt` length ≤ 200 characters, and initialize `status='pending'`, `progress=0`.
 - **Progress**: Must be integer 0–100.
 - **Enum**: `status` must be one of `(pending, in_progress, completed, failed)`.
 

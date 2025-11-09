@@ -72,14 +72,33 @@ type StoryGenInsert = Database["public"]["Tables"]["story_generations"]["Insert"
 /** DB row shortcut */
 type StoryGenRow = Database["public"]["Tables"]["story_generations"]["Row"];
 
+/** User-supplied preferences that influence story generation */
+export type StoryGenerationPreferencesDto = Pick<
+  StoryGenRow,
+  "child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt"
+>;
+
+/** Errors returned by story preferences form validation */
+export type StoryPreferencesFormErrors = Partial<
+  Record<"child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt" | "duration_range", string>
+>;
+
 /** Command Model for POST /api/story-generations */
-export type CreateStoryGenerationCommand = Pick<StoryGenInsert, "story_id">;
+export type CreateStoryGenerationCommand = Pick<
+  StoryGenInsert,
+  "story_id" | "child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt"
+>;
 
 /** Response DTO for POST /api/story-generations */
-export type CreateStoryGenerationResponseDto = Pick<StoryGenRow, "id" | "status" | "progress">;
+export type CreateStoryGenerationResponseDto = Pick<StoryGenRow, "id" | "status" | "progress" | "teaser"> & {
+  preferences: StoryGenerationPreferencesDto;
+};
 
 /** DTO for story generation items (list and single) */
-export type StoryGenerationDto = Pick<StoryGenRow, "id" | "story_id" | "status" | "progress" | "result_url">;
+export type StoryGenerationDto = Pick<
+  StoryGenRow,
+  "id" | "story_id" | "status" | "progress" | "result_url" | "teaser"
+> & { preferences: StoryGenerationPreferencesDto };
 
 /** Response DTO for GET /api/story-generations */
 export interface GetStoryGenerationsResponseDto {
@@ -294,16 +313,24 @@ export interface GenerationSectionProps {
   isLoading: boolean;
   /** Whether user has voice sample */
   userHasVoiceSample: boolean;
+  /** Current preference values */
+  preferences: StoryGenerationPreferencesDto;
+  /** Validation errors for preference controls */
+  errors: StoryPreferencesFormErrors;
+  /** Callback when preference values change */
+  onPreferencesChange: (values: StoryGenerationPreferencesDto) => void;
 }
 
 /** Props for generate button */
 export interface GenerateButtonProps {
   /** Button click handler */
-  onClick: () => void;
+  onClick?: () => void;
   /** Whether button is disabled */
   disabled: boolean;
   /** Whether button is in loading state */
   isLoading: boolean;
+  /** Button type attribute */
+  type?: "button" | "submit" | "reset";
 }
 
 /** Props for story content display */
@@ -334,6 +361,18 @@ export interface ErrorMessageProps {
   onDismiss?: () => void;
   /** Whether error is dismissible */
   dismissible?: boolean;
+}
+
+/** Props for story preferences form */
+export interface StoryPreferencesFormProps {
+  /** Current form values */
+  values: StoryGenerationPreferencesDto;
+  /** Validation errors */
+  errors: StoryPreferencesFormErrors;
+  /** Callback when values change */
+  onChange: (values: StoryGenerationPreferencesDto) => void;
+  /** Maximum motif description length */
+  maxMotifLength?: number;
 }
 
 /** Standardized API error */

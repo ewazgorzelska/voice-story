@@ -8,8 +8,18 @@ import type {
   StoryGenerationDto,
 } from "@/types";
 
+type StoryGenerationPreferencesInput = Omit<CreateStoryGenerationCommand, "story_id">;
+
+const DEFAULT_GENERATION_PREFERENCES: StoryGenerationPreferencesInput = {
+  child_age: 5,
+  duration_min_minutes: 5,
+  duration_max_minutes: 10,
+  motif_prompt: null,
+};
+
 interface UseStoryGenerationParams {
   storyId: string;
+  preferences?: StoryGenerationPreferencesInput;
   onComplete?: () => void;
   pollingIntervalMs?: number;
   maxRetries?: number;
@@ -39,6 +49,7 @@ const INITIAL_STATE: GenerationState = {
  */
 export function useStoryGeneration({
   storyId,
+  preferences,
   onComplete,
   pollingIntervalMs = 2000,
   maxRetries = 3,
@@ -46,6 +57,18 @@ export function useStoryGeneration({
   const [state, setState] = useState<GenerationState>(INITIAL_STATE);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef<number>(0);
+  const preferencesRef = useRef<StoryGenerationPreferencesInput>(preferences ?? DEFAULT_GENERATION_PREFERENCES);
+
+  useEffect(() => {
+    if (preferences) {
+      preferencesRef.current = {
+        child_age: preferences.child_age,
+        duration_min_minutes: preferences.duration_min_minutes,
+        duration_max_minutes: preferences.duration_max_minutes,
+        motif_prompt: preferences.motif_prompt ?? null,
+      };
+    }
+  }, [preferences]);
 
   /**
    * Validates UUID format
@@ -65,6 +88,13 @@ export function useStoryGeneration({
 
     const candidate = data as Partial<StoryGenerationDto>;
     const validStatuses = ["pending", "in_progress", "completed", "failed"];
+    const hasValidPreferences =
+      typeof candidate.preferences === "object" &&
+      candidate.preferences !== null &&
+      typeof candidate.preferences.child_age === "number" &&
+      typeof candidate.preferences.duration_min_minutes === "number" &&
+      typeof candidate.preferences.duration_max_minutes === "number" &&
+      (candidate.preferences.motif_prompt === null || typeof candidate.preferences.motif_prompt === "string");
     return (
       typeof candidate.id === "string" &&
       typeof candidate.story_id === "string" &&
@@ -72,7 +102,10 @@ export function useStoryGeneration({
       validStatuses.includes(candidate.status) &&
       typeof candidate.progress === "number" &&
       candidate.progress >= 0 &&
-      candidate.progress <= 100
+      candidate.progress <= 100 &&
+      typeof candidate.result_url === "string" &&
+      typeof candidate.teaser === "string" &&
+      hasValidPreferences
     );
   };
 
@@ -236,8 +269,15 @@ export function useStoryGeneration({
     retryCountRef.current = 0;
 
     try {
+      const { child_age, duration_min_minutes, duration_max_minutes, motif_prompt } =
+        preferencesRef.current ?? DEFAULT_GENERATION_PREFERENCES;
+
       const command: CreateStoryGenerationCommand = {
         story_id: storyId,
+        child_age,
+        duration_min_minutes,
+        duration_max_minutes,
+        motif_prompt: motif_prompt ?? null,
       };
 
       const response = await fetch("/api/story-generations", {
@@ -286,12 +326,12 @@ export function useStoryGeneration({
       }
 
       // Handle validation errors
-      if (response.status === 422) {
+      if (response.status === 400 || response.status === 422) {
         const error = await response.json();
         setState((prev) => ({
           ...prev,
           isGenerating: false,
-          error: error.message || "Invalid request. Please try again.",
+          error: error.message || "Invalid request. Please review your story preferences.",
         }));
         return;
       }

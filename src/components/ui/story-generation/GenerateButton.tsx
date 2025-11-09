@@ -5,7 +5,7 @@ import type { GenerateButtonProps } from "@/types";
  * Button component to initiate story generation
  * Based on Shadcn Button with loading states and icon
  */
-const GenerateButton = ({ onClick, disabled, isLoading }: GenerateButtonProps) => {
+const GenerateButton = ({ onClick, disabled, isLoading, type = "button" }: GenerateButtonProps) => {
   return (
     <Button
       onClick={onClick}
@@ -15,6 +15,7 @@ const GenerateButton = ({ onClick, disabled, isLoading }: GenerateButtonProps) =
       aria-label={isLoading ? "Generating story in progress" : "Generate story with your voice"}
       size="lg"
       className="min-w-[200px]"
+      type={type}
     >
       {isLoading ? (
         <>

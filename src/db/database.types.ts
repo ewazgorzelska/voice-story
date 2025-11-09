@@ -93,35 +93,50 @@ export interface Database {
       };
       story_generations: {
         Row: {
+          child_age: number;
           created_at: string;
+          duration_max_minutes: number;
+          duration_min_minutes: number;
           id: string;
           metadata: Json | null;
+          motif_prompt: string | null;
           progress: number;
           result_url: string;
           status: Database["public"]["Enums"]["generation_status"];
           story_id: string;
+          teaser: string;
           updated_at: string;
           user_id: string;
         };
         Insert: {
+          child_age: number;
           created_at?: string;
+          duration_max_minutes: number;
+          duration_min_minutes: number;
           id?: string;
           metadata?: Json | null;
+          motif_prompt?: string | null;
           progress?: number;
           result_url?: string;
           status?: Database["public"]["Enums"]["generation_status"];
           story_id: string;
+          teaser?: string;
           updated_at?: string;
           user_id: string;
         };
         Update: {
+          child_age?: number;
           created_at?: string;
+          duration_max_minutes?: number;
+          duration_min_minutes?: number;
           id?: string;
           metadata?: Json | null;
+          motif_prompt?: string | null;
           progress?: number;
           result_url?: string;
           status?: Database["public"]["Enums"]["generation_status"];
           story_id?: string;
+          teaser?: string;
           updated_at?: string;
           user_id?: string;
         };

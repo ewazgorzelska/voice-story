@@ -43,6 +43,11 @@ This table is managed by Supabase Auth
 - status generation_status NOT NULL DEFAULT 'pending'
 - progress INTEGER NOT NULL CHECK (progress BETWEEN 0 AND 100)
 - result_url TEXT NOT NULL
+- teaser TEXT NOT NULL
+- child_age SMALLINT NOT NULL CHECK (child_age BETWEEN 0 AND 18)
+- duration_min_minutes SMALLINT NOT NULL CHECK (duration_min_minutes BETWEEN 1 AND 60)
+- duration_max_minutes SMALLINT NOT NULL CHECK (duration_max_minutes BETWEEN 1 AND 60 AND duration_max_minutes > duration_min_minutes)
+- motif_prompt TEXT CHECK (char_length(motif_prompt) <= 200)
 - metadata JSONB
 - created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 - updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

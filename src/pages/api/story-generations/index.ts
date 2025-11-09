@@ -48,11 +48,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       );
     }
 
-    const { story_id } = validation.data;
-
     // Call service to initiate generation
     try {
-      const result = await storyGenerationService.initiate(locals.supabase, userId, story_id);
+      const result = await storyGenerationService.initiate(locals.supabase, userId, validation.data);
 
       return new Response(JSON.stringify(result), {
         status: 202,

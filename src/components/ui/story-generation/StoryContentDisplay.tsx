@@ -4,7 +4,7 @@ import type { StoryContentDisplayProps } from "@/types";
  * Presentational component displaying story title and content
  * Provides semantic HTML structure with proper typography
  */
-export function StoryContentDisplay({ title, content }: StoryContentDisplayProps) {
+const StoryContentDisplay = ({ title, content }: StoryContentDisplayProps) => {
   // Handle empty content
   if (!title || !content) {
     return null;
@@ -20,4 +20,6 @@ export function StoryContentDisplay({ title, content }: StoryContentDisplayProps
       </article>
     </section>
   );
-}
+};
+
+export default StoryContentDisplay;

@@ -2,13 +2,58 @@
 
 import { z } from "zod";
 
+const motifPromptSchema = z
+  .union([z.string(), z.null()])
+  .transform((value) => {
+    if (value === null) {
+      return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length === 0 ? null : trimmed;
+  })
+  .refine((value) => value === null || value.length <= 200, {
+    message: "motif_prompt cannot exceed 200 characters",
+  })
+  .optional()
+  .transform((value) => (value === undefined ? null : value));
+
 /**
  * Schema for POST /api/story-generations
  * Validates the story_id in the request body
  */
-export const InitGenerationSchema = z.object({
-  story_id: z.string().uuid("story_id must be a valid UUID"),
-});
+export const InitGenerationSchema = z
+  .object({
+    story_id: z.string().uuid("story_id must be a valid UUID"),
+    child_age: z
+      .number({
+        required_error: "child_age is required",
+        invalid_type_error: "child_age must be a number",
+      })
+      .int("child_age must be an integer")
+      .min(0, "child_age must be at least 0")
+      .max(18, "child_age must be at most 18"),
+    duration_min_minutes: z
+      .number({
+        required_error: "duration_min_minutes is required",
+        invalid_type_error: "duration_min_minutes must be a number",
+      })
+      .int("duration_min_minutes must be an integer")
+      .min(1, "duration_min_minutes must be at least 1")
+      .max(60, "duration_min_minutes must be at most 60"),
+    duration_max_minutes: z
+      .number({
+        required_error: "duration_max_minutes is required",
+        invalid_type_error: "duration_max_minutes must be a number",
+      })
+      .int("duration_max_minutes must be an integer")
+      .min(1, "duration_max_minutes must be at least 1")
+      .max(60, "duration_max_minutes must be at most 60"),
+    motif_prompt: motifPromptSchema,
+  })
+  .refine((data) => data.duration_max_minutes > data.duration_min_minutes, {
+    message: "duration_max_minutes must be greater than duration_min_minutes",
+    path: ["duration_max_minutes"],
+  });
 
 /**
  * Schema for GET /api/story-generations query parameters

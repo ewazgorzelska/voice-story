@@ -1,11 +1,12 @@
 import { useCallback, useMemo } from "react";
-import { AlertCircleIcon, HeadphonesIcon, Trash2Icon } from "lucide-react";
+import { AlertCircleIcon, BabyIcon, Clock3Icon, HeadphonesIcon, SparklesIcon, Trash2Icon } from "lucide-react";
 
 import Button from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import AudioPlayer from "@/components/ui/library/AudioPlayer";
 import ProgressDisplay from "@/components/ui/library/ProgressDisplay";
 import StatusBadge from "@/components/ui/library/StatusBadge";
+import Tag from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import type { GeneratedStoryCardProps } from "@/types";
 
@@ -31,10 +32,12 @@ const GeneratedStoryCard = ({
   onPause,
   onDelete,
 }: GeneratedStoryCardProps) => {
-  const { id, story_title, status, progress, result_url } = generation;
+  const { id, story_title, status, progress, result_url, teaser, preferences } = generation;
 
   const helperText = useMemo(() => STATUS_HELPER_TEXT[status], [status]);
   const playableAudioUrl = hasPlayableAudio(status, result_url) ? (result_url as string) : null;
+  const durationLabel = `${preferences.duration_min_minutes}-${preferences.duration_max_minutes} min`;
+  const hasMotif = Boolean(preferences.motif_prompt);
 
   const handlePlay = () => {
     if (!playableAudioUrl) {
@@ -78,6 +81,20 @@ const GeneratedStoryCard = ({
         </div>
 
         {showProgress(status) ? <ProgressDisplay progress={progress ?? 0} status={status} /> : null}
+
+        <div className="flex flex-wrap gap-2">
+          <Tag icon={<BabyIcon aria-hidden="true" />}>Age {preferences.child_age}</Tag>
+          <Tag icon={<Clock3Icon aria-hidden="true" />}>{durationLabel}</Tag>
+          {hasMotif ? <Tag icon={<SparklesIcon aria-hidden="true" />}>{preferences.motif_prompt}</Tag> : null}
+        </div>
+
+        {teaser ? (
+          <p className="text-sm text-muted-foreground line-clamp-3">{teaser}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">
+            Teaser will appear here once the story finishes generating.
+          </p>
+        )}
 
         {status === "failed" ? (
           <div className="flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
