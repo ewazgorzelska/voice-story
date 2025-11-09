@@ -1,11 +1,50 @@
-import { createClient } from "@supabase/supabase-js";
+import type { AstroCookies } from "astro";
+import { createServerClient, type CookieOptions, type CookieOptionsWithName } from "@supabase/ssr";
 
-import type { Database } from "../db/database.types.ts";
+import type { Database } from "./database.types.ts";
 
-const supabaseUrl = import.meta.env.SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+export const cookieOptions: CookieOptionsWithName = {
+  path: "/",
+  secure: true,
+  httpOnly: true,
+  sameSite: "lax",
+};
 
-export const supabaseClient = createClient<Database>(supabaseUrl, supabaseAnonKey);
-export type SupabaseClient = typeof supabaseClient;
+function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
+  if (!cookieHeader) {
+    return [];
+  }
+
+  return cookieHeader.split(";").map((cookie) => {
+    const [name, ...rest] = cookie.trim().split("=");
+    return { name, value: rest.join("=") };
+  });
+}
+
+export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
+  const supabaseUrl = import.meta.env.SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+    cookieOptions,
+    cookies: {
+      getAll() {
+        return parseCookieHeader(context.headers.get("Cookie") ?? "");
+      },
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          context.cookies.set(name, value, {
+            ...cookieOptions,
+            ...options,
+          });
+        });
+      },
+    },
+  });
+
+  return supabase;
+};
+
+export type SupabaseClient = ReturnType<typeof createSupabaseServerInstance>;
 
 export const DEFAULT_USER_ID = "9d619ae5-34eb-4d42-96ad-5c35109eb329";

@@ -50,18 +50,42 @@ const LoginForm = () => {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (data.error?.code === "INVALID_CREDENTIALS") {
+      if (!response.ok || !data.success) {
+        const defaultMessage = "Something went wrong. Please try again or contact support.";
+        const errorCode: string | undefined = data.error?.code;
+
+        if (errorCode === "INVALID_CREDENTIALS") {
           setErrors({ form: "Invalid email or password." });
+        } else if (errorCode === "INVALID_INPUT") {
+          const fieldErrorsPayload = data.error?.details?.fieldErrors as Record<string, string[]> | undefined;
+
+          const nextErrors: Partial<Record<keyof LoginInput | "form", string>> = {};
+
+          if (fieldErrorsPayload) {
+            const fields: (keyof LoginInput)[] = ["email", "password"];
+            fields.forEach((field) => {
+              const messages = fieldErrorsPayload[field];
+              if (messages?.length) {
+                nextErrors[field] = messages[0];
+              }
+            });
+          }
+
+          if (Object.keys(nextErrors).length > 0) {
+            setErrors(nextErrors);
+          } else {
+            setErrors({ form: data.error?.message || defaultMessage });
+          }
         } else {
-          setErrors({ form: data.error?.message || "Something went wrong. Please try again or contact support." });
+          setErrors({ form: data.error?.message || defaultMessage });
         }
+
         setIsLoading(false);
         return;
       }
 
       // Success - redirect
-      const redirectPath = data.data?.redirectPath || "/library";
+      const redirectPath = data.data?.redirectPath || "/stories";
       window.location.assign(redirectPath);
     } catch {
       setErrors({ form: "Something went wrong. Please try again or contact support." });
