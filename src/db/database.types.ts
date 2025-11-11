@@ -67,6 +67,13 @@ export interface Database {
       stories: {
         Row: {
           content: string;
+          cover_image_alt: string | null;
+          cover_image_height: number | null;
+          cover_image_mime: string | null;
+          cover_image_path: string | null;
+          cover_image_uploaded_by: string | null;
+          cover_image_url: string | null;
+          cover_image_width: number | null;
           id: string;
           slug: string;
           title: string;
@@ -75,6 +82,13 @@ export interface Database {
         };
         Insert: {
           content: string;
+          cover_image_alt?: string | null;
+          cover_image_height?: number | null;
+          cover_image_mime?: string | null;
+          cover_image_path?: string | null;
+          cover_image_uploaded_by?: string | null;
+          cover_image_url?: string | null;
+          cover_image_width?: number | null;
           id?: string;
           slug: string;
           title: string;
@@ -83,6 +97,13 @@ export interface Database {
         };
         Update: {
           content?: string;
+          cover_image_alt?: string | null;
+          cover_image_height?: number | null;
+          cover_image_mime?: string | null;
+          cover_image_path?: string | null;
+          cover_image_uploaded_by?: string | null;
+          cover_image_url?: string | null;
+          cover_image_width?: number | null;
           id?: string;
           slug?: string;
           title?: string;

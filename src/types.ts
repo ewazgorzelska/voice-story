@@ -51,7 +51,7 @@ export interface PaginationMetaDto {
 type StoryRow = Database["public"]["Tables"]["stories"]["Row"];
 
 /** Summary DTO for story listings */
-export type StorySummaryDto = Pick<StoryRow, "id" | "title" | "slug">;
+export type StorySummaryDto = Pick<StoryRow, "id" | "title" | "slug" | "cover_image_url">;
 
 /** Response DTO for GET /api/stories */
 export interface GetStoriesResponseDto {

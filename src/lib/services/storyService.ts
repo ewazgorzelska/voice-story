@@ -39,7 +39,7 @@ export async function getStories(
   // Fetch paginated story summaries
   const { data, error } = await supabase
     .from("stories")
-    .select("id, title, slug")
+    .select("id, title, slug, cover_image_url")
     .order("title", { ascending: sort === "asc" })
     .range(from, to);
 
