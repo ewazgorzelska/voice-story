@@ -60,15 +60,6 @@ export default function StoryLibraryView() {
     storeStoryPreferences(defaults);
   }, []);
 
-  const handleScrollToStories = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const section = document.getElementById("story-library-grid");
-    section?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, []);
-
   const { stories, pagination, isLoading, error, setCurrentPage } = useStoryLibrary({
     initialPage: 1,
     pageSize: 12,
@@ -84,9 +75,6 @@ export default function StoryLibraryView() {
               Set your storytelling preferences, then choose a story to personalize the narration.
             </p>
           </div>
-          <Button type="button" size="lg" onClick={handleScrollToStories}>
-            Browse stories
-          </Button>
         </header>
 
         <section className="rounded-xl border border-border/60 bg-card/60 shadow-sm">

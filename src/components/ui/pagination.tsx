@@ -55,14 +55,12 @@ const PaginationPrevious = ({ className, ...props }: React.ComponentProps<typeof
     {...props}
   >
     <ChevronLeftIcon />
-    <span className="hidden sm:block">Previous</span>
   </PaginationLink>
 );
 
 const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => {
   return (
     <PaginationLink aria-label="Go to next page" className={cn("gap-1 px-2.5 sm:pr-2.5", className)} {...props}>
-      <span className="hidden sm:block">Next</span>
       <ChevronRightIcon />
     </PaginationLink>
   );
