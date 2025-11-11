@@ -10,6 +10,7 @@ const PUBLIC_PATHS = new Set([
   "/auth/reset",
   "/api/auth/login",
   "/api/auth/register",
+  "/api/stories", // Public endpoint - browse stories without auth
 ]);
 
 const isPublicAssetRequest = (pathname: string) => {

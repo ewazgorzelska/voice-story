@@ -294,6 +294,66 @@ export class ElevenLabsService {
     }
   }
 
+  /**
+   * Converts text to speech using a specific voice
+   * @param params Text-to-speech parameters
+   * @returns Audio data as ArrayBuffer
+   */
+  public async textToSpeech(params: {
+    text: string;
+    voiceId: string;
+    model_id?: string;
+    voice_settings?: {
+      stability?: number;
+      similarity_boost?: number;
+      style?: number;
+      use_speaker_boost?: boolean;
+    };
+    optimize_streaming_latency?: number;
+  }): Promise<{ audio: ArrayBuffer }> {
+    try {
+      this._logger.info("Converting text to speech", {
+        voiceId: params.voiceId,
+        textLength: params.text.length,
+        model: params.model_id || "default",
+      });
+
+      const baseUrl = "https://api.elevenlabs.io";
+      const url = `${baseUrl}/v1/text-to-speech/${params.voiceId}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "audio/mpeg",
+          "Content-Type": "application/json",
+          "xi-api-key": this._options.apiKey || "",
+        },
+        body: JSON.stringify({
+          text: params.text,
+          model_id: params.model_id || "eleven_multilingual_v2",
+          voice_settings: params.voice_settings,
+          optimize_streaming_latency: params.optimize_streaming_latency,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        throw new ElevenLabsServiceError(`Text-to-speech failed: ${response.statusText}`, "TTS_ERROR", errorText);
+      }
+
+      const audio = await response.arrayBuffer();
+
+      this._logger.info("Text-to-speech completed", {
+        voiceId: params.voiceId,
+        audioSize: audio.byteLength,
+      });
+
+      return { audio };
+    } catch (error) {
+      throw this._mapSdkError(error, "textToSpeech");
+    }
+  }
+
   // ==========================================================================
   // Internal Helpers
   // ==========================================================================
@@ -618,4 +678,18 @@ function resolveFilenameFromUrl(url: string): string {
 function createMockVoiceId(referenceId: string): string {
   const normalized = referenceId.replace(/[^a-z0-9-_]/gi, "").toLowerCase() || "user";
   return `mock-${normalized}-${Date.now().toString(36)}`;
+}
+
+// ============================================================================
+// Factory Function
+// ============================================================================
+
+/**
+ * Creates an ElevenLabsService instance with environment configuration
+ * @returns Configured ElevenLabsService instance
+ */
+export function createElevenLabsService(): ElevenLabsService {
+  return ElevenLabsService.create({
+    apiKey: import.meta.env.ELEVENLABS_API_KEY,
+  });
 }

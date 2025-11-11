@@ -14,10 +14,10 @@ const statusColors: Record<GenerationStatus, string> = {
  * Maps generation status to display text
  */
 const statusText: Record<GenerationStatus, string> = {
-  pending: "Waiting...",
-  in_progress: "Generation in progress...",
-  completed: "Completed!",
-  failed: "Error",
+  pending: "Preparing your story...",
+  in_progress: "Crafting your personalized narration...",
+  completed: "Your story is ready!",
+  failed: "Generation failed",
 };
 
 /**

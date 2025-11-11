@@ -1,8 +1,7 @@
 import { useId, type ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
+import { STORY_PREFERENCES_MOTIF_MAX_LENGTH } from "@/lib/utils/storyPreferences";
 import type { StoryPreferencesFormProps, StoryGenerationPreferencesDto } from "@/types";
-
-const MOTIF_MAX_LENGTH = 200;
 
 const baseInputClasses =
   "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
@@ -31,7 +30,7 @@ const StoryPreferencesForm = ({
   values,
   errors,
   onChange,
-  maxMotifLength = MOTIF_MAX_LENGTH,
+  maxMotifLength = STORY_PREFERENCES_MOTIF_MAX_LENGTH,
 }: StoryPreferencesFormProps) => {
   const childAgeId = useId();
   const minDurationId = useId();

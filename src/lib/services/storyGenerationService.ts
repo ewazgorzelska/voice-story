@@ -60,8 +60,26 @@ export async function initiate(
     throw new Error("Failed to create story generation");
   }
 
-  // TODO: Enqueue background job for processing
-  // This would typically involve sending a message to a queue service
+  // Trigger background processing
+  // In production, this should be replaced with a proper job queue (e.g., BullMQ, Inngest)
+  // For MVP, we trigger the processing endpoint asynchronously
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.PUBLIC_SITE_URL || "";
+
+  if (baseUrl) {
+    fetch(`${baseUrl}/api/story-generations/process`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        generation_id: generation.id,
+        user_id: userId,
+      }),
+    }).catch((error) => {
+      // Log but don't throw - the generation record is created
+      logError("Failed to trigger background processing:", error);
+    });
+  } else {
+    logError("Cannot trigger background processing: base URL not available");
+  }
 
   return {
     id: generation.id,
