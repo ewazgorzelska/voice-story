@@ -2,8 +2,29 @@
 import AuthLayout from "@/layouts/AuthLayout.astro";
 import RegisterForm from "@/components/auth/RegisterForm";
 
-// Note: In the future, this page will check for existing session and redirect
-// authenticated users to /library. For now, we're just rendering the form.
+export const prerender = false;
+
+const { user, supabase } = Astro.locals;
+
+if (user && supabase) {
+  const { data: voiceSample, error: voiceSampleError } = await supabase
+    .from("voice_samples")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (voiceSampleError) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to determine voice sample status for redirect", voiceSampleError);
+    return Astro.redirect("/stories");
+  }
+
+  if (voiceSample) {
+    return Astro.redirect("/stories");
+  }
+
+  return Astro.redirect("/voice-sample");
+}
 ---
 
 <AuthLayout title="Sign Up - Voice Story">

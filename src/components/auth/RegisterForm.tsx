@@ -12,6 +12,7 @@ export default function RegisterForm() {
     passwordConfirm: "",
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterInput | "form", string>>>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,11 +22,15 @@ export default function RegisterForm() {
     if (errors[name as keyof RegisterInput]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+    if (successMessage) {
+      setSuccessMessage(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setSuccessMessage(null);
     setIsLoading(true);
 
     // Client-side validation
@@ -51,19 +56,49 @@ export default function RegisterForm() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (data.error?.code === "EMAIL_IN_USE") {
+      if (!response.ok || !data.success) {
+        const defaultMessage = "Something went wrong. Please try again or contact support.";
+        const errorCode: string | undefined = data.error?.code;
+
+        if (errorCode === "EMAIL_IN_USE") {
           setErrors({ email: "This email is already registered." });
+        } else if (errorCode === "INVALID_INPUT") {
+          const fieldErrorsPayload = data.error?.details?.fieldErrors as Record<string, string[]> | undefined;
+
+          const nextErrors: Partial<Record<keyof RegisterInput | "form", string>> = {};
+
+          if (fieldErrorsPayload) {
+            const fields: (keyof RegisterInput)[] = ["email", "password", "passwordConfirm"];
+            fields.forEach((field) => {
+              const messages = fieldErrorsPayload[field];
+              if (messages?.length) {
+                nextErrors[field] = messages[0];
+              }
+            });
+          }
+
+          if (Object.keys(nextErrors).length > 0) {
+            setErrors(nextErrors);
+          } else {
+            setErrors({ form: data.error?.message || defaultMessage });
+          }
         } else {
-          setErrors({ form: data.error?.message || "Something went wrong. Please try again or contact support." });
+          setErrors({ form: data.error?.message || defaultMessage });
         }
+
         setIsLoading(false);
         return;
       }
 
-      // Success - redirect
-      const redirectPath = data.data?.redirectPath || "/library";
-      window.location.assign(redirectPath);
+      setSuccessMessage(
+        data.data?.message || "Account created! Check your email to confirm your address before signing in."
+      );
+      setFormData({
+        email: "",
+        password: "",
+        passwordConfirm: "",
+      });
+      setIsLoading(false);
     } catch {
       setErrors({ form: "Something went wrong. Please try again or contact support." });
       setIsLoading(false);
@@ -78,6 +113,16 @@ export default function RegisterForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {successMessage && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-md border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-primary"
+            >
+              {successMessage} You can sign in after confirming your email.
+            </div>
+          )}
+
           {errors.form && (
             <div
               role="alert"
@@ -156,6 +201,11 @@ export default function RegisterForm() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create account"}
           </Button>
+
+          <p className="text-xs text-muted-foreground">
+            After you sign up, we&apos;ll email you a confirmation link. You need to confirm your email before you can
+            sign in.
+          </p>
 
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}

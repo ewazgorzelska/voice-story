@@ -65,11 +65,7 @@ const userEmail = user?.email ?? null;
             </>
           ) : (
             <>
-              <a
-                href="/login"
-                class={linkClasses("/login")}
-                aria-current={isActive("/login") ? "page" : undefined}
-              >
+              <a href="/login" class={linkClasses("/login")} aria-current={isActive("/login") ? "page" : undefined}>
                 Sign in
               </a>
               <a
