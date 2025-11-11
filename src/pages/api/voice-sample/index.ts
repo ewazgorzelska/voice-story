@@ -267,7 +267,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
   try {
     const voiceSample = await createVoiceSample(locals.supabase, user.id, validatedData);
 
-    const response: VoiceSampleDto = voiceSample;
+    const response = {
+      ...voiceSample,
+      message: voiceSample.verified
+        ? "Voice sample verified and ready to use! You can now generate personalized stories."
+        : "Voice sample created. Verification pending.",
+    };
 
     return new Response(JSON.stringify(response), {
       status: 201,
@@ -287,6 +292,34 @@ export const POST: APIRoute = async ({ request, locals }) => {
           }),
           {
             status: 409,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      if (error.message === "VERIFICATION_PHRASE_MISMATCH") {
+        return new Response(
+          JSON.stringify({
+            message: "The recorded audio does not match the verification phrase. Please try again.",
+          }),
+          {
+            status: 422,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      if (error.message === "VOICE_VERIFICATION_ERROR") {
+        return new Response(
+          JSON.stringify({
+            message: "Voice verification failed. Please try recording again in a quiet environment.",
+          }),
+          {
+            status: 422,
             headers: {
               "Content-Type": "application/json",
             },

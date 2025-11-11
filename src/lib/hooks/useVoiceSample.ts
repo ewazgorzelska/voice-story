@@ -6,6 +6,7 @@ interface UseVoiceSampleReturn {
   sampleExists: boolean;
   isLoading: boolean;
   error: string | null;
+  successMessage: string | null;
   fetchPhrase: () => Promise<void>;
   checkSampleExists: () => Promise<void>;
   submitSample: (blob: Blob, phrase: string) => Promise<void>;
@@ -16,6 +17,7 @@ export function useVoiceSample(): UseVoiceSampleReturn {
   const [sampleExists, setSampleExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fetchPhrase = useCallback(async () => {
     setIsLoading(true);
@@ -76,6 +78,7 @@ export function useVoiceSample(): UseVoiceSampleReturn {
 
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       // Create FormData to send audio file and verification phrase
@@ -99,7 +102,13 @@ export function useVoiceSample(): UseVoiceSampleReturn {
         throw new Error("Failed to create voice sample");
       }
 
+      const data = await response.json();
       setSampleExists(true);
+      
+      // Set success message from API response
+      if (data.message) {
+        setSuccessMessage(data.message);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error occurred";
       setError(message);
@@ -114,6 +123,7 @@ export function useVoiceSample(): UseVoiceSampleReturn {
     sampleExists,
     isLoading,
     error,
+    successMessage,
     fetchPhrase,
     checkSampleExists,
     submitSample,

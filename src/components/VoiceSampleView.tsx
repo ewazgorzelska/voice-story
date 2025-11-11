@@ -20,6 +20,7 @@ export default function VoiceSampleView() {
     sampleExists,
     isLoading: hookLoading,
     error: hookError,
+    successMessage,
     fetchPhrase,
     checkSampleExists,
     submitSample,
@@ -30,6 +31,7 @@ export default function VoiceSampleView() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<MessageState | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Fetch phrase and check existing sample on mount
   useEffect(() => {
@@ -76,15 +78,21 @@ export default function VoiceSampleView() {
 
     try {
       await submitSample(audioBlob, phrase);
+
+      // Mark as redirecting to prevent showing "already have sample" message
+      setIsRedirecting(true);
+
+      // Use the verification message from the API response
+      const successText = successMessage || "Voice sample uploaded successfully! Redirecting...";
       setMessage({
         type: "success",
-        text: "Voice sample uploaded successfully! Redirecting...",
+        text: successText,
       });
 
-      // Redirect after success
+      // Redirect to story library after success
       setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
+        window.location.href = "/stories";
+      }, 3000); // Slightly longer to show verification message
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Upload failed";
       setMessage({ type: "error", text: errorMessage });
@@ -97,12 +105,18 @@ export default function VoiceSampleView() {
     setMessage({ type: "error", text: error });
   };
 
-  // Show existing sample message
-  if (sampleExists) {
+  // Show existing sample message (but not if we're redirecting after successful upload)
+  if (sampleExists && !isRedirecting) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <h1 className="text-3xl font-bold mb-6 text-foreground">Voice Sample</h1>
-        <InlineMessage type="success">You already have a voice sample. No need to record a new one.</InlineMessage>
+        <InlineMessage type="success">
+          You already have a voice sample. No need to record a new one.
+          <br />
+          <a href="/stories" className="underline hover:no-underline font-semibold mt-2 inline-block">
+            Go to Story Library →
+          </a>
+        </InlineMessage>
       </div>
     );
   }

@@ -295,6 +295,80 @@ export class ElevenLabsService {
   }
 
   /**
+   * Transcribes audio to text using ElevenLabs Scribe
+   * @param audioFile Audio file buffer or URL to the audio file to transcribe
+   * @returns Transcribed text
+   */
+  public async speechToText(audioFile: ArrayBuffer | string): Promise<string> {
+    try {
+      this._logger.info("Transcribing audio to text", {
+        audioType: typeof audioFile === "string" ? "URL" : "Buffer",
+      });
+
+      // If audioFile is a URL, download it first
+      let audioData: ArrayBuffer;
+      if (typeof audioFile === "string") {
+        const audioResponse = await fetch(audioFile);
+        if (!audioResponse.ok) {
+          throw new ElevenLabsServiceError(
+            `Failed to download audio: ${audioResponse.statusText}`,
+            "AUDIO_DOWNLOAD_ERROR"
+          );
+        }
+        audioData = await audioResponse.arrayBuffer();
+      } else {
+        audioData = audioFile;
+      }
+
+      // Use the ElevenLabs Speech-to-Text API (Scribe)
+      const baseUrl = "https://api.elevenlabs.io";
+      const url = `${baseUrl}/v1/speech-to-text`;
+
+      // Convert ArrayBuffer to Blob
+      const audioBlob = new Blob([audioData], { type: "audio/webm" });
+
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("file", audioBlob, "voice-sample.webm");
+      formData.append("model_id", "scribe_v2"); // Use Scribe v2 for best accuracy
+      formData.append("language", "pl"); // Polish language
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "xi-api-key": this._options.apiKey || "",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        this._logger.error("ElevenLabs STT API error", {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
+        throw new ElevenLabsServiceError(`Speech-to-text failed: ${response.statusText}`, "STT_ERROR", errorText);
+      }
+
+      const result = await response.json();
+
+      // Extract transcript from response
+      // Scribe v2 returns: { text: "transcribed text", ... }
+      const transcript = result.text || result.transcript || result.transcription?.text || "";
+
+      this._logger.info("Speech-to-text completed", {
+        transcriptLength: transcript.length,
+        transcript: transcript.substring(0, 100), // Log first 100 chars for debugging
+      });
+
+      return transcript;
+    } catch (error) {
+      throw this._mapSdkError(error, "speechToText");
+    }
+  }
+
+  /**
    * Converts text to speech using a specific voice
    * @param params Text-to-speech parameters
    * @returns Audio data as ArrayBuffer
