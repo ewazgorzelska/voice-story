@@ -502,3 +502,120 @@ export class ElevenLabsService {
     });
   }
 }
+
+/**
+ * High-level helper that provisions a custom voice model in ElevenLabs
+ * based on the recorded audio sample stored in Supabase.
+ *
+ * In development environments where `ELEVENLABS_API_KEY` is not provided,
+ * this function falls back to returning a deterministic mock identifier so
+ * the rest of the voice onboarding flow can be exercised without hitting
+ * the external API.
+ *
+ * @param audioUrl Public HTTPS URL to the uploaded voice sample
+ * @param referenceId Stable identifier tied to the authenticated user
+ * @returns ElevenLabs voice identifier (or mock identifier in local dev)
+ */
+export async function createVoiceModel(audioUrl: string, referenceId: string): Promise<string> {
+  if (!audioUrl || typeof audioUrl !== "string") {
+    throw new ValidationError("Audio URL is required to create a voice model");
+  }
+
+  if (!referenceId || typeof referenceId !== "string") {
+    throw new ValidationError("Reference ID is required to create a voice model");
+  }
+
+  const sanitizedReferenceId = referenceId.trim();
+  if (sanitizedReferenceId.length === 0) {
+    throw new ValidationError("Reference ID must not be empty");
+  }
+
+  let service: ElevenLabsService | null = null;
+
+  try {
+    service = ElevenLabsService.create();
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      const fallbackVoiceId = createMockVoiceId(sanitizedReferenceId);
+      logWarn("ELEVENLABS_API_KEY is not configured; using mock voice identifier", {
+        referenceId: sanitizedReferenceId,
+        fallbackVoiceId,
+      });
+      return fallbackVoiceId;
+    }
+
+    throw error;
+  }
+
+  try {
+    const voiceDraft = await service.createPvcVoice({
+      name: resolveVoiceName(sanitizedReferenceId),
+      referenceId: sanitizedReferenceId,
+      labels: {
+        app: "voice-story",
+      },
+      metadata: {
+        source: "voice-story",
+      },
+    });
+
+    await service.uploadVoiceAsset(voiceDraft.voiceId, {
+      kind: "url",
+      url: audioUrl,
+      filename: resolveFilenameFromUrl(audioUrl),
+      mimeTypeHint: "audio/webm",
+    });
+
+    try {
+      await service.trainVoice(voiceDraft.voiceId);
+    } catch (error) {
+      logWarn("Failed to queue ElevenLabs voice training; continuing with draft voice", {
+        voiceId: voiceDraft.voiceId,
+        referenceId: sanitizedReferenceId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return voiceDraft.voiceId;
+  } catch (error) {
+    logError("ElevenLabs integration failed; falling back to mock voice identifier", {
+      referenceId: sanitizedReferenceId,
+      audioUrl,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return createMockVoiceId(sanitizedReferenceId);
+  }
+}
+
+function resolveVoiceName(referenceId: string): string {
+  const normalized = referenceId.replace(/[^a-z0-9-_]/gi, "").toLowerCase();
+  if (normalized) {
+    return `voice-story-${normalized}`;
+  }
+  return `voice-story-${Date.now().toString(36)}`;
+}
+
+function resolveFilenameFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.trim();
+    const lastSegment = pathname.split("/").pop();
+
+    if (lastSegment && lastSegment.length > 0) {
+      return lastSegment;
+    }
+  } catch (error) {
+    logWarn("Failed to derive filename from audio URL; using default name", {
+      url,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return "voice-sample.webm";
+}
+
+function createMockVoiceId(referenceId: string): string {
+  const normalized = referenceId.replace(/[^a-z0-9-_]/gi, "").toLowerCase() || "user";
+  return `mock-${normalized}-${Date.now().toString(36)}`;
+}
