@@ -10,14 +10,14 @@ import { createVoiceModel, createElevenLabsService } from "./elevenlabsService";
  * These phrases are designed to capture a variety of phonemes
  */
 const VERIFICATION_PHRASES = [
-  "Jestem misiem o bardzo małym rozumku.",
-  "Im bardziej Puchatek zaglądał do środka, tym bardziej Prosiaczka tam nie było.",
-  "Czy mógłbyś podać mi trochę miodu?",
-  "Dzień bez przyjaciela to jak garnek bez kropli miodu.",
-  "Obietnice się nie liczą, jeśli ktoś nie zamierza ich dotrzymać.",
-  "Najlepiej jest tam, gdzie nas nie ma.",
-  "Prosiaczku, czy masz może coś do jedzenia?",
-  "Zawsze warto poczekać na przyjaciela.",
+  "Sometimes the smallest things take up the most room in your heart, and honey always tastes better when you share it with friends.",
+  "When you wake up in the morning and think of something that makes you happy, that's going to be the very best day of all.",
+  "There's nothing better than a long walk through the forest with a friend who understands you without words and shares every moment with you.",
+  "A true friendship isn't about counting the days we spent together, but making every single day count and special in its own way.",
+  "You are braver than you believe, stronger than you seem, smarter than you think, and most importantly, you are loved more than you know.",
+  "Even if we are apart, we will always be together, because true friends are never far away from each other in their hearts.",
+  "Sometimes you just need to sit next to someone in silence, because the most important things are said without words, from the heart.",
+  "A day spent with Piglet, Tigger, and Eeyore is always a day full of adventures, laughter, and unforgettable moments in the Hundred Acre Wood.",
 ];
 
 /**

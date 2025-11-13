@@ -3,21 +3,16 @@ import { z } from "zod";
 import { logError, logInfo, logWarn } from "@/lib/logger";
 import type { Logger } from "./openrouter.types";
 import {
-  CaptchaPayloadSchema,
-  CreatePvcVoiceSchema,
+  CreateIvcVoiceSchema,
   ElevenLabsServiceOptionsSchema,
   type ElevenLabsPersistenceHandlers,
   type ElevenLabsServiceOptions,
   type ElevenLabsServiceOptionsInput,
-  type PvcVerificationStatus,
-  type PvcVoiceDraft,
+  type IvcVoiceDraft,
   type SpeakerSample,
   type SpeakerSampleFilters,
-  type TrainingJob,
-  type TrainingStatus,
   UseVoiceOptionsSchema,
   VoiceAssetSourceSchema,
-  type VoiceAssetMeta,
   type VoiceAssetSource,
   type VoiceFilter,
   VoiceFilterSchema,
@@ -62,27 +57,6 @@ export class UploadError extends ElevenLabsServiceError {
   }
 }
 
-export class VerificationError extends ElevenLabsServiceError {
-  constructor(message: string, cause?: unknown) {
-    super(message, "VERIFICATION_ERROR", cause);
-    this.name = "VerificationError";
-  }
-}
-
-export class TrainingFailedError extends ElevenLabsServiceError {
-  constructor(message: string, cause?: unknown) {
-    super(message, "TRAINING_FAILED", cause);
-    this.name = "TrainingFailedError";
-  }
-}
-
-export class AbortPollingError extends ElevenLabsServiceError {
-  constructor(message = "Polling aborted") {
-    super(message, "POLLING_ABORTED");
-    this.name = "AbortPollingError";
-  }
-}
-
 export class PersistenceError extends ElevenLabsServiceError {
   constructor(message: string, cause?: unknown) {
     super(message, "PERSISTENCE_ERROR", cause);
@@ -115,13 +89,6 @@ const createDefaultLogger = (): Logger => ({
 
 const HTTPS_PROTOCOL = "https:";
 const MAX_REMOTE_ASSET_SIZE_BYTES = 64 * 1024 * 1024; // 64MB
-const DEFAULT_FAST_POLL_MS = 2_000;
-const DEFAULT_SLOW_POLL_MS = 10_000;
-
-interface TrainingPollContext {
-  abortController: AbortController;
-  promise: Promise<TrainingStatus>;
-}
 
 export class ElevenLabsService {
   public static async installSdkExample(): Promise<void> {
@@ -136,8 +103,6 @@ export class ElevenLabsService {
   private readonly _apiClient: ReturnType<typeof this._resolveApiClient>;
   private readonly _logger: Logger;
   private readonly _persistence: ElevenLabsPersistenceHandlers;
-  private readonly _stateCache = new Map<string, TrainingStatus>();
-  private readonly _pollContexts = new Map<string, TrainingPollContext>();
   private readonly _options: ElevenLabsServiceOptions;
 
   private constructor(options?: ElevenLabsServiceOptionsInput) {
@@ -171,10 +136,10 @@ export class ElevenLabsService {
   // Public API
   // ==========================================================================
 
-  public async createPvcVoice(input: z.input<typeof CreatePvcVoiceSchema>): Promise<PvcVoiceDraft> {
+  public async createIvcVoice(input: z.input<typeof CreateIvcVoiceSchema>): Promise<IvcVoiceDraft> {
     try {
-      const params = CreatePvcVoiceSchema.parse(input);
-      this._logger.info("Creating PVC voice", { referenceId: params.referenceId });
+      const params = CreateIvcVoiceSchema.parse(input);
+      this._logger.info("Creating IVC voice", { referenceId: params.referenceId });
 
       const voice = await this._apiClient.createVoice(params);
 
@@ -186,22 +151,7 @@ export class ElevenLabsService {
 
       return voice;
     } catch (error) {
-      throw this._mapSdkError(error, "createPvcVoice");
-    }
-  }
-
-  public async uploadVoiceAsset(voiceId: string, asset: VoiceAssetSource): Promise<VoiceAssetMeta> {
-    const validatedAsset = this._validateAudioSource(asset);
-
-    try {
-      this._logger.info("Uploading PVC voice asset", {
-        voiceId,
-        kind: validatedAsset.kind,
-      });
-
-      return await this._apiClient.uploadVoiceAsset(voiceId, validatedAsset);
-    } catch (error) {
-      throw this._mapSdkError(error, "uploadVoiceAsset", (err) => new UploadError("Failed to upload voice asset", err));
+      throw this._mapSdkError(error, "createIvcVoice");
     }
   }
 
@@ -210,61 +160,6 @@ export class ElevenLabsService {
       return await this._apiClient.getSpeakerAudio(voiceId, filters);
     } catch (error) {
       throw this._mapSdkError(error, "getSpeakerAudio");
-    }
-  }
-
-  public async submitCaptchaVerification(
-    voiceId: string,
-    payload: z.input<typeof CaptchaPayloadSchema>
-  ): Promise<PvcVerificationStatus> {
-    try {
-      const parsedPayload = CaptchaPayloadSchema.parse(payload);
-      const status = await this._apiClient.submitCaptchaVerification(voiceId, parsedPayload);
-
-      await this._persistLifecycleEvent({
-        type: "verification_status",
-        voiceId,
-        payload: status,
-      });
-
-      return status;
-    } catch (error) {
-      throw this._mapSdkError(
-        error,
-        "submitCaptchaVerification",
-        (err) => new VerificationError("Captcha verification failed", err)
-      );
-    }
-  }
-
-  public async trainVoice(voiceId: string): Promise<TrainingJob> {
-    try {
-      const job = await this._apiClient.trainVoice(voiceId);
-      this._scheduleTrainingPoll(job.voiceId);
-      return job;
-    } catch (error) {
-      throw this._mapSdkError(error, "trainVoice");
-    }
-  }
-
-  public async pollTrainingStatus(jobId: string, signal?: AbortSignal): Promise<TrainingStatus> {
-    try {
-      const existing = this._pollContexts.get(jobId);
-      if (existing) {
-        if (signal) {
-          signal.addEventListener("abort", () => existing.abortController.abort(), { once: true });
-        }
-        return existing.promise;
-      }
-
-      const context = this._createPollContext(jobId, signal);
-      this._pollContexts.set(jobId, context);
-
-      const status = await context.promise;
-      this._pollContexts.delete(jobId);
-      return status;
-    } catch (error) {
-      throw this._mapSdkError(error, "pollTrainingStatus");
     }
   }
 
@@ -519,20 +414,14 @@ export class ElevenLabsService {
   }
 
   private async _persistLifecycleEvent(event: {
-    type: "voice_created" | "training_status" | "verification_status" | "voice_ready";
+    type: "voice_created" | "voice_ready";
     voiceId: string;
-    payload: PvcVoiceDraft | TrainingStatus | PvcVerificationStatus | VoiceUsageContext;
+    payload: IvcVoiceDraft | VoiceUsageContext;
   }): Promise<void> {
     try {
       switch (event.type) {
         case "voice_created":
-          await this._persistence.onVoiceCreated?.(event.payload as PvcVoiceDraft);
-          break;
-        case "training_status":
-          await this._persistence.onTrainingStatus?.(event.payload as TrainingStatus);
-          break;
-        case "verification_status":
-          await this._persistence.onVerificationStatus?.(event.payload as PvcVerificationStatus);
+          await this._persistence.onVoiceCreated?.(event.payload as IvcVoiceDraft);
           break;
         case "voice_ready":
           await this._persistence.onVoiceReady?.(event.payload as VoiceUsageContext);
@@ -545,101 +434,14 @@ export class ElevenLabsService {
       throw new PersistenceError("Failed to persist ElevenLabs lifecycle event", error);
     }
   }
-
-  private _scheduleTrainingPoll(voiceId: string): void {
-    if (this._pollContexts.has(voiceId)) {
-      return;
-    }
-
-    const context = this._createPollContext(voiceId);
-    this._pollContexts.set(voiceId, context);
-  }
-
-  private _createPollContext(voiceId: string, externalSignal?: AbortSignal): TrainingPollContext {
-    const abortController = new AbortController();
-
-    if (externalSignal) {
-      externalSignal.addEventListener(
-        "abort",
-        () => {
-          abortController.abort();
-        },
-        { once: true }
-      );
-    }
-
-    const promise = (async () => {
-      let iteration = 0;
-
-      while (true) {
-        if (abortController.signal.aborted) {
-          throw new AbortPollingError();
-        }
-
-        const status = await this._apiClient.getTrainingStatus(voiceId);
-        this._stateCache.set(voiceId, status);
-
-        await this._persistLifecycleEvent({
-          type: "training_status",
-          voiceId,
-          payload: status,
-        });
-
-        if (status.state === "ready") {
-          return status;
-        }
-
-        if (status.state === "failed") {
-          throw new TrainingFailedError(status.failureReason ?? "ElevenLabs reported training failure", status);
-        }
-
-        const delay = iteration < 5 ? DEFAULT_FAST_POLL_MS : DEFAULT_SLOW_POLL_MS;
-        await this._delay(delay, abortController.signal);
-        iteration += 1;
-      }
-    })();
-
-    return {
-      abortController,
-      promise,
-    };
-  }
-
-  private async _delay(ms: number, signal?: AbortSignal): Promise<void> {
-    await new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => {
-        cleanup();
-        resolve();
-      }, ms);
-
-      const cleanup = () => {
-        clearTimeout(timer);
-        if (signal) {
-          signal.removeEventListener("abort", onAbort);
-        }
-      };
-
-      const onAbort = () => {
-        cleanup();
-        reject(new AbortPollingError());
-      };
-
-      if (signal) {
-        if (signal.aborted) {
-          cleanup();
-          reject(new AbortPollingError());
-          return;
-        }
-
-        signal.addEventListener("abort", onAbort, { once: true });
-      }
-    });
-  }
 }
 
 /**
  * High-level helper that provisions a custom voice model in ElevenLabs
  * based on the recorded audio sample stored in Supabase.
+ *
+ * Uses Instant Voice Cloning (IVC) which creates voices immediately without
+ * requiring verification or training steps.
  *
  * In development environments where `ELEVENLABS_API_KEY` is not provided,
  * this function falls back to returning a deterministic mock identifier so
@@ -682,7 +484,8 @@ export async function createVoiceModel(audioUrl: string, referenceId: string): P
   }
 
   try {
-    const voiceDraft = await service.createPvcVoice({
+    // Create voice with IVC - audio files are uploaded in the same call
+    const voiceDraft = await service.createIvcVoice({
       name: resolveVoiceName(sanitizedReferenceId),
       referenceId: sanitizedReferenceId,
       labels: {
@@ -691,25 +494,17 @@ export async function createVoiceModel(audioUrl: string, referenceId: string): P
       metadata: {
         source: "voice-story",
       },
+      files: [
+        {
+          kind: "url",
+          url: audioUrl,
+          filename: resolveFilenameFromUrl(audioUrl),
+          mimeTypeHint: "audio/webm",
+        },
+      ],
     });
 
-    await service.uploadVoiceAsset(voiceDraft.voiceId, {
-      kind: "url",
-      url: audioUrl,
-      filename: resolveFilenameFromUrl(audioUrl),
-      mimeTypeHint: "audio/webm",
-    });
-
-    try {
-      await service.trainVoice(voiceDraft.voiceId);
-    } catch (error) {
-      logWarn("Failed to queue ElevenLabs voice training; continuing with draft voice", {
-        voiceId: voiceDraft.voiceId,
-        referenceId: sanitizedReferenceId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-
+    // IVC voices are ready immediately, no training needed
     return voiceDraft.voiceId;
   } catch (error) {
     logError("ElevenLabs integration failed; falling back to mock voice identifier", {

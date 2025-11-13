@@ -34,6 +34,25 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
   try {
     logInfo("Starting story generation processing", { generationId, userId });
 
+    // Validate required environment variables
+    const openRouterKey = import.meta.env.OPENROUTER_API_KEY;
+    const elevenLabsKey = import.meta.env.ELEVENLABS_API_KEY;
+
+    logInfo("Checking environment variables", {
+      hasOpenRouterKey: !!openRouterKey,
+      hasElevenLabsKey: !!elevenLabsKey,
+      openRouterKeyLength: openRouterKey?.length || 0,
+      elevenLabsKeyLength: elevenLabsKey?.length || 0,
+    });
+
+    if (!openRouterKey) {
+      throw new Error("OPENROUTER_API_KEY environment variable is not set");
+    }
+
+    if (!elevenLabsKey) {
+      throw new Error("ELEVENLABS_API_KEY environment variable is not set");
+    }
+
     // Fetch the generation record with related story data
     const { data: generation, error: fetchError } = await supabase
       .from("story_generations")
@@ -92,14 +111,24 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
     // STEP 1: Generate personalized story content via OpenRouter
     logInfo("Generating story content", { generationId, storyId: story.id });
 
-    const contentResult = await generateStoryContent({
-      storyTitle: story.title,
-      storyContent: story.content,
-      childAge: generation.child_age,
-      durationMinMinutes: generation.duration_min_minutes,
-      durationMaxMinutes: generation.duration_max_minutes,
-      motifPrompt: generation.motif_prompt,
-    });
+    let contentResult;
+    try {
+      contentResult = await generateStoryContent({
+        storyTitle: story.title,
+        storyContent: story.content,
+        childAge: generation.child_age,
+        durationMinMinutes: generation.duration_min_minutes,
+        durationMaxMinutes: generation.duration_max_minutes,
+        motifPrompt: generation.motif_prompt,
+      });
+    } catch (contentError) {
+      logError("Story content generation failed", {
+        error: contentError,
+        generationId,
+        storyId: story.id,
+      });
+      throw contentError;
+    }
 
     // Update progress after content generation
     await updateGenerationStatus(supabase, generationId, "in_progress", 40);
@@ -116,14 +145,34 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
     // STEP 2: Generate audio narration via ElevenLabs
     logInfo("Generating audio narration", { generationId, voiceId: voiceSample.elevenlabs_voice_id });
 
-    const elevenLabs = createElevenLabsService();
+    let elevenLabs;
+    try {
+      elevenLabs = createElevenLabsService();
+    } catch (serviceError) {
+      logError("Failed to create ElevenLabs service", {
+        error: serviceError,
+        generationId,
+      });
+      const errorMessage = serviceError instanceof Error ? serviceError.message : String(serviceError);
+      throw new Error(`Failed to initialize ElevenLabs service: ${errorMessage}`);
+    }
 
-    const audioResult = await elevenLabs.textToSpeech({
-      text: contentResult.content,
-      voiceId: voiceSample.elevenlabs_voice_id,
-      optimize_streaming_latency: 2,
-      model_id: "eleven_multilingual_v2",
-    });
+    let audioResult;
+    try {
+      audioResult = await elevenLabs.textToSpeech({
+        text: contentResult.content,
+        voiceId: voiceSample.elevenlabs_voice_id,
+        optimize_streaming_latency: 2,
+        model_id: "eleven_multilingual_v2",
+      });
+    } catch (audioError) {
+      logError("Audio generation failed", {
+        error: audioError,
+        generationId,
+        voiceId: voiceSample.elevenlabs_voice_id,
+      });
+      throw audioError;
+    }
 
     // Update progress after audio generation
     await updateGenerationStatus(supabase, generationId, "in_progress", 80);
@@ -176,19 +225,44 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
 
     logInfo("Story generation completed successfully", { generationId, resultUrl: urlData.publicUrl });
   } catch (error) {
-    logError("Story generation failed", { error, generationId, userId });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : "UnknownError";
 
-    // Mark generation as failed
-    await updateGenerationStatus(supabase, generationId, "failed", 0);
-
-    // Log failure event
-    await supabase.from("generation_logs").insert({
-      generation_id: generationId,
-      event: `Generation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      occurred_at: new Date().toISOString(),
+    logError("Story generation failed", {
+      error: errorMessage,
+      errorName,
+      errorStack,
+      generationId,
+      userId,
     });
 
-    throw error;
+    // Mark generation as failed
+    try {
+      await updateGenerationStatus(supabase, generationId, "failed", 0);
+    } catch (updateError) {
+      logError("Failed to update generation status to failed", {
+        error: updateError,
+        generationId,
+      });
+    }
+
+    // Log failure event
+    try {
+      await supabase.from("generation_logs").insert({
+        generation_id: generationId,
+        event: `Generation failed: ${errorMessage}`,
+        occurred_at: new Date().toISOString(),
+      });
+    } catch (logInsertError) {
+      logError("Failed to log generation failure event", {
+        error: logInsertError,
+        generationId,
+      });
+    }
+
+    // Don't re-throw - we've already logged and updated the status
+    // Re-throwing would cause unhandled promise rejection
   }
 }
 

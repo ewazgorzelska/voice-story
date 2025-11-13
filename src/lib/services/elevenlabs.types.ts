@@ -6,31 +6,16 @@ import type { Logger } from "./openrouter.types";
 // Constants & Enums
 // ============================================================================
 
-export const PVC_LIFECYCLE_STATES = [
-  "draft",
-  "pending_verification",
-  "verified",
-  "training",
-  "ready",
-  "failed",
-] as const;
+export const IVC_LIFECYCLE_STATES = ["draft", "ready", "failed"] as const;
 
-export type PvcLifecycleState = (typeof PVC_LIFECYCLE_STATES)[number];
-
-export const TRAINING_STATUSES = ["queued", "processing", "ready", "failed"] as const;
-
-export type TrainingState = (typeof TRAINING_STATUSES)[number];
-
-export const CAPTCHA_TYPES = ["hcaptcha", "recaptcha_v2", "recaptcha_enterprise"] as const;
-
-export type CaptchaType = (typeof CAPTCHA_TYPES)[number];
+export type IvcLifecycleState = (typeof IVC_LIFECYCLE_STATES)[number];
 
 // ============================================================================
 // Shared Types & Interfaces
 // ============================================================================
 
 export interface LifecycleMetadata {
-  state: PvcLifecycleState;
+  state: IvcLifecycleState;
   updatedAt: string;
   reason?: string;
 }
@@ -51,9 +36,7 @@ export interface ElevenLabsHttpResponse<T> {
 }
 
 export interface ElevenLabsPersistenceHandlers {
-  onVoiceCreated?: (voice: PvcVoiceDraft) => Promise<void> | void;
-  onTrainingStatus?: (status: TrainingStatus) => Promise<void> | void;
-  onVerificationStatus?: (status: PvcVerificationStatus) => Promise<void> | void;
+  onVoiceCreated?: (voice: IvcVoiceDraft) => Promise<void> | void;
   onVoiceReady?: (voice: VoiceUsageContext) => Promise<void> | void;
 }
 
@@ -85,21 +68,20 @@ export interface ElevenLabsApiClientOptions {
 // Voice Creation & Assets
 // ============================================================================
 
-export interface CreatePvcVoiceParams {
+export interface CreateIvcVoiceParams {
   name: string;
   description?: string;
-  language?: string;
   referenceId: string;
   labels?: Record<string, string>;
   metadata?: Record<string, unknown>;
+  files: VoiceAssetSource[];
 }
 
-export interface PvcVoiceDraft {
+export interface IvcVoiceDraft {
   voiceId: string;
   name: string;
   referenceId: string;
-  state: PvcLifecycleState;
-  language?: string;
+  state: IvcLifecycleState;
   createdAt: string;
   metadata?: Record<string, unknown>;
 }
@@ -154,41 +136,6 @@ export interface SpeakerSampleFilters {
 }
 
 // ============================================================================
-// Verification & Training
-// ============================================================================
-
-export interface CaptchaPayload {
-  token: string;
-  type: CaptchaType;
-  expiresAt?: string;
-}
-
-export interface PvcVerificationStatus {
-  voiceId: string;
-  state: PvcLifecycleState;
-  verifiedAt?: string;
-  nextAction?: "upload_samples" | "await_training" | "retry_verification";
-  reason?: string;
-}
-
-export interface TrainingJob {
-  jobId: string;
-  voiceId: string;
-  state: TrainingState;
-  submittedAt: string;
-}
-
-export interface TrainingStatus {
-  jobId: string;
-  voiceId: string;
-  state: TrainingState;
-  progress?: number;
-  estimatedTimeSeconds?: number;
-  completedAt?: string;
-  failureReason?: string;
-}
-
-// ============================================================================
 // Voice Usage & Listing
 // ============================================================================
 
@@ -208,7 +155,7 @@ export interface VoiceUsageContext {
 
 export interface VoiceFilter {
   referenceId?: string;
-  states?: PvcLifecycleState[];
+  states?: IvcLifecycleState[];
   search?: string;
   limit?: number;
 }
@@ -216,17 +163,16 @@ export interface VoiceFilter {
 export interface VoiceSummary {
   voiceId: string;
   name: string;
-  state: PvcLifecycleState;
-  language?: string;
+  state: IvcLifecycleState;
   createdAt: string;
   updatedAt?: string;
   metadata?: Record<string, unknown>;
 }
 
-export interface PvcLifecycleEvent {
-  type: "voice_created" | "training_status" | "verification_status" | "voice_ready";
+export interface IvcLifecycleEvent {
+  type: "voice_created" | "voice_ready";
   voiceId: string;
-  payload: PvcVoiceDraft | TrainingStatus | PvcVerificationStatus | VoiceUsageContext;
+  payload: IvcVoiceDraft | VoiceUsageContext;
 }
 
 // ============================================================================
@@ -234,12 +180,8 @@ export interface PvcLifecycleEvent {
 // ============================================================================
 
 export interface ElevenLabsApiClient {
-  createVoice(params: CreatePvcVoiceParams): Promise<PvcVoiceDraft>;
-  uploadVoiceAsset(voiceId: string, asset: VoiceAssetSource): Promise<VoiceAssetMeta>;
+  createVoice(params: CreateIvcVoiceParams): Promise<IvcVoiceDraft>;
   getSpeakerAudio(voiceId: string, filters?: SpeakerSampleFilters): Promise<SpeakerSample[]>;
-  submitCaptchaVerification(voiceId: string, payload: CaptchaPayload): Promise<PvcVerificationStatus>;
-  trainVoice(voiceId: string): Promise<TrainingJob>;
-  getTrainingStatus(jobId: string): Promise<TrainingStatus>;
   useVoice(voiceId: string, options: UseVoiceOptions): Promise<VoiceUsageContext>;
   listVoices(filter?: VoiceFilter): Promise<VoiceSummary[]>;
 }
@@ -289,19 +231,13 @@ export const UrlVoiceAssetSchema = z.object({
 
 export const VoiceAssetSourceSchema = z.discriminatedUnion("kind", [BufferVoiceAssetSchema, UrlVoiceAssetSchema]);
 
-export const CreatePvcVoiceSchema = z.object({
+export const CreateIvcVoiceSchema = z.object({
   name: z.string().min(1, "Voice name is required"),
   description: z.string().max(512).optional(),
-  language: z.string().min(2).max(10).optional(),
   referenceId: z.string().min(1, "Reference ID is required"),
   labels: z.record(z.string()).optional(),
   metadata: z.record(z.unknown()).optional(),
-});
-
-export const CaptchaPayloadSchema = z.object({
-  token: z.string().min(1, "Captcha token is required"),
-  type: z.enum(CAPTCHA_TYPES),
-  expiresAt: z.string().datetime().optional(),
+  files: z.array(VoiceAssetSourceSchema).min(1, "At least one audio file is required"),
 });
 
 export const UseVoiceOptionsSchema = z.object({
@@ -313,7 +249,7 @@ export const UseVoiceOptionsSchema = z.object({
 export const VoiceFilterSchema = z
   .object({
     referenceId: z.string().optional(),
-    states: z.array(z.enum(PVC_LIFECYCLE_STATES)).min(1).optional(),
+    states: z.array(z.enum(IVC_LIFECYCLE_STATES)).min(1).optional(),
     search: z.string().optional(),
     limit: z.number().int().positive().max(100).optional(),
   })
@@ -335,8 +271,6 @@ export const ElevenLabsServiceOptionsSchema = z.object({
   persistence: z
     .object({
       onVoiceCreated: z.custom<ElevenLabsPersistenceHandlers["onVoiceCreated"]>().optional(),
-      onTrainingStatus: z.custom<ElevenLabsPersistenceHandlers["onTrainingStatus"]>().optional(),
-      onVerificationStatus: z.custom<ElevenLabsPersistenceHandlers["onVerificationStatus"]>().optional(),
       onVoiceReady: z.custom<ElevenLabsPersistenceHandlers["onVoiceReady"]>().optional(),
     })
     .optional(),

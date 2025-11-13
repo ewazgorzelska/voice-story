@@ -5,27 +5,18 @@ import pRetry, { AbortError } from "p-retry";
 import { logError, logInfo, logWarn } from "@/lib/logger";
 import type { Logger } from "./openrouter.types";
 import {
-  type CaptchaPayload,
-  CaptchaPayloadSchema,
-  CreatePvcVoiceSchema,
-  type CreatePvcVoiceParams,
+  CreateIvcVoiceSchema,
+  type CreateIvcVoiceParams,
   type ElevenLabsApiClient,
   type ElevenLabsApiClientOptions,
-  type ElevenLabsHttpResponse,
   type ElevenLabsRetryOptions,
-  type PvcLifecycleState,
-  type PvcVerificationStatus,
-  type PvcVoiceDraft,
+  type IvcLifecycleState,
+  type IvcVoiceDraft,
   type SpeakerSample,
   type SpeakerSampleFilters,
-  type TrainingJob,
-  type TrainingState,
-  type TrainingStatus,
   type UseVoiceOptions,
   UseVoiceOptionsSchema,
-  type VoiceAssetMeta,
   type VoiceAssetSource,
-  VoiceAssetSourceSchema,
   type VoiceFilter,
   VoiceFilterSchema,
   type VoiceSummary,
@@ -84,79 +75,50 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
     };
   }
 
-  public async createVoice(params: CreatePvcVoiceParams): Promise<PvcVoiceDraft> {
-    const parsed = CreatePvcVoiceSchema.parse(params);
+  public async createVoice(params: CreateIvcVoiceParams): Promise<IvcVoiceDraft> {
+    const parsed = CreateIvcVoiceSchema.parse(params);
 
-    const payload: ElevenLabs.voices.CreatePvcVoiceRequest = {
-      name: parsed.name,
-      language: parsed.language ?? "en",
-      description: parsed.description,
-      labels: {
-        ...(parsed.labels ?? {}),
-        referenceId: parsed.referenceId,
-      },
+    // Resolve all audio files to uploadable format
+    const uploadableFiles: Uploadable.FileLike[] = [];
+    for (const asset of parsed.files) {
+      const uploadable = await this.resolveUploadable(asset);
+      uploadableFiles.push(uploadable);
+    }
+
+    // Create voice with IVC (Instant Voice Cloning)
+    const labelsWithRef: Record<string, string> = {
+      ...(parsed.labels ?? {}),
+      referenceId: parsed.referenceId,
     };
 
-    const response = await this.withRetry(() => this.client.voices.pvc.create(payload), "voices.pvc.create");
+    const response = await this.withRetry(
+      () =>
+        this.client.voices.ivc.create({
+          name: parsed.name,
+          description: parsed.description,
+          files: uploadableFiles,
+          labels: JSON.stringify(labelsWithRef), // IVC API expects serialized JSON string
+        }),
+      "voices.ivc.create"
+    );
 
     const voiceId = response.voiceId;
     const voice = await this.getVoiceById(voiceId);
 
-    const draft: PvcVoiceDraft = {
+    const draft: IvcVoiceDraft = {
       voiceId,
       name: voice.name ?? parsed.name,
       referenceId: voice.labels?.referenceId ?? parsed.referenceId,
       state: this.deriveLifecycleState(voice),
-      language: voice.fineTuning?.language ?? parsed.language ?? voice.voiceVerification?.language,
       createdAt: this.getTimestampFromUnix(voice.createdAtUnix),
       metadata: {
         description: voice.description,
         labels: voice.labels,
-        verification: voice.voiceVerification,
         custom: parsed.metadata,
       },
     };
 
     return draft;
-  }
-
-  public async uploadVoiceAsset(voiceId: string, asset: VoiceAssetSource): Promise<VoiceAssetMeta> {
-    const parsedAsset = VoiceAssetSourceSchema.parse(asset);
-    const uploadable = await this.resolveUploadable(parsedAsset);
-
-    const result = await this.withRetry(
-      () =>
-        this.client.voices.pvc.samples.create(voiceId, {
-          files: [uploadable],
-        }),
-      "voices.pvc.samples.create"
-    );
-
-    const sample = result[0];
-
-    if (!sample?.sampleId) {
-      throw new Error("ElevenLabs SDK did not return a voice sample identifier");
-    }
-
-    const voice = await this.getVoiceById(voiceId);
-    const summary = this.toVoiceSummary(voice);
-    const fallbackFilename =
-      parsedAsset.kind === "url"
-        ? this.extractFilenameFromUrl(parsedAsset.url)
-        : (parsedAsset.filename ?? summary.name);
-
-    return {
-      assetId: sample.sampleId,
-      voiceId,
-      filename: sample.fileName ?? fallbackFilename,
-      mimeType:
-        parsedAsset.kind === "buffer"
-          ? (parsedAsset.mimeType ?? "audio/mpeg")
-          : (parsedAsset.mimeTypeHint ?? "audio/mpeg"),
-      durationSeconds: sample.durationSecs ?? parsedAsset.metrics?.durationSeconds,
-      sizeBytes: sample.sizeBytes ?? parsedAsset.metrics?.sizeBytes,
-      createdAt: new Date().toISOString(),
-    };
   }
 
   public async getSpeakerAudio(voiceId: string, filters?: SpeakerSampleFilters): Promise<SpeakerSample[]> {
@@ -177,87 +139,20 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
         continue;
       }
 
-      const preview = await this.withRetry(
-        () =>
-          this.client.voices.pvc.samples.audio.get(voiceId, sample.sampleId ?? "", {
-            removeBackgroundNoise: true,
-          }),
-        "voices.pvc.samples.audio.get"
-      );
-
+      // For IVC voices, samples are already available
+      // Note: The SDK doesn't provide direct audio URLs for samples
+      // We'll need to construct a placeholder or fetch them separately if needed
       results.push({
         sampleId: sample.sampleId ?? "",
-        url: `data:${preview.mediaType};base64,${preview.audioBase64}`,
-        durationSeconds: preview.durationSecs ?? sample.durationSecs ?? 0,
-        format: preview.mediaType,
+        url: "", // IVC samples don't have direct URLs in the API response
+        durationSeconds: sample.durationSecs ?? 0,
+        format: sample.mimeType ?? "audio/mpeg",
         transcription: undefined,
         createdAt: new Date().toISOString(),
       });
     }
 
     return results;
-  }
-
-  public async submitCaptchaVerification(voiceId: string, payload: CaptchaPayload): Promise<PvcVerificationStatus> {
-    const data = CaptchaPayloadSchema.parse(payload);
-
-    const endpoint = `${this.baseUrl}/v1/voices/pvc/${voiceId}/verification/captcha`;
-    const response = await this.executeHttpRequest(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "xi-api-key": this.options.apiKey,
-      },
-      body: JSON.stringify({
-        captcha_token: data.token,
-        captcha_type: data.type,
-      }),
-    });
-
-    if (response.status >= 400) {
-      throw new Error(`Captcha verification failed with status ${response.status}`);
-    }
-
-    const voice = await this.getVoiceById(voiceId);
-    const state = this.deriveLifecycleState(voice);
-
-    return {
-      voiceId,
-      state,
-      verifiedAt: voice.voiceVerification?.isVerified ? new Date().toISOString() : undefined,
-      nextAction: this.resolveNextAction(state),
-      reason: voice.voiceVerification?.verificationFailures?.[0],
-    };
-  }
-
-  public async trainVoice(voiceId: string): Promise<TrainingJob> {
-    await this.withRetry(() => this.client.voices.pvc.train(voiceId), "voices.pvc.train");
-
-    return {
-      jobId: voiceId,
-      voiceId,
-      state: "queued",
-      submittedAt: new Date().toISOString(),
-    };
-  }
-
-  public async getTrainingStatus(jobId: string): Promise<TrainingStatus> {
-    const voice = await this.getVoiceById(jobId);
-    const state = this.deriveTrainingState(voice);
-    const progress = this.deriveTrainingProgress(voice);
-    const message = this.deriveTrainingMessage(voice);
-
-    const completed = state === "ready" || state === "failed";
-
-    return {
-      jobId,
-      voiceId: jobId,
-      state,
-      progress,
-      estimatedTimeSeconds: undefined,
-      completedAt: completed ? new Date().toISOString() : undefined,
-      failureReason: state === "failed" ? message : undefined,
-    };
   }
 
   public async useVoice(voiceId: string, options: UseVoiceOptions): Promise<VoiceUsageContext> {
@@ -352,28 +247,16 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
     );
   }
 
-  private deriveLifecycleState(voice: ElevenLabs.Voice): PvcLifecycleState {
-    const verification = voice.voiceVerification;
-    const fineTuningState = this.extractFineTuningState(voice)?.toLowerCase();
-
-    if (fineTuningState === "fine_tuned") {
+  private deriveLifecycleState(voice: ElevenLabs.Voice): IvcLifecycleState {
+    // IVC voices are instantly ready after creation
+    // Check if voice has samples - if yes, it's ready
+    if (voice.samples && voice.samples.length > 0) {
       return "ready";
     }
 
-    if (fineTuningState === "fine_tuning" || fineTuningState === "queued") {
-      return "training";
-    }
-
-    if (fineTuningState === "failed") {
+    // Check for any failure indicators
+    if (voice.fineTuning?.state && Object.values(voice.fineTuning.state).includes("failed")) {
       return "failed";
-    }
-
-    if (verification?.isVerified) {
-      return "verified";
-    }
-
-    if (verification?.requiresVerification) {
-      return "pending_verification";
     }
 
     return "draft";
@@ -403,76 +286,6 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
     }
 
     return undefined;
-  }
-
-  private deriveTrainingState(voice: ElevenLabs.Voice): TrainingState {
-    const fineTuningState = this.extractFineTuningState(voice)?.toLowerCase();
-
-    switch (fineTuningState) {
-      case "queued":
-        return "queued";
-      case "fine_tuning":
-      case "delayed":
-        return "processing";
-      case "fine_tuned":
-        return "ready";
-      case "failed":
-        return "failed";
-      default:
-        return "queued";
-    }
-  }
-
-  private deriveTrainingProgress(voice: ElevenLabs.Voice): number | undefined {
-    const progresses = voice.fineTuning?.progress;
-    if (!progresses) {
-      return undefined;
-    }
-
-    const values = Object.values(progresses).filter((value): value is number => typeof value === "number");
-    if (!values.length) {
-      return undefined;
-    }
-
-    const total = values.reduce((acc, current) => acc + current, 0);
-    return Math.min(1, total / values.length);
-  }
-
-  private deriveTrainingMessage(voice: ElevenLabs.Voice): string | undefined {
-    const messages = voice.fineTuning?.message;
-    if (!messages) {
-      return undefined;
-    }
-
-    const values = Object.values(messages).filter(
-      (value): value is string => typeof value === "string" && value.length > 0
-    );
-    return values[0];
-  }
-
-  private extractFineTuningState(voice: ElevenLabs.Voice): ElevenLabs.FineTuningResponseModelStateValue | undefined {
-    const state = voice.fineTuning?.state;
-    if (!state) {
-      return undefined;
-    }
-
-    const values = Object.values(state);
-    return values.find((value): value is ElevenLabs.FineTuningResponseModelStateValue => typeof value === "string");
-  }
-
-  private resolveNextAction(state: PvcLifecycleState): PvcVerificationStatus["nextAction"] {
-    switch (state) {
-      case "pending_verification":
-        return "retry_verification";
-      case "verified":
-        return "upload_samples";
-      case "training":
-        return "await_training";
-      case "ready":
-        return undefined;
-      default:
-        return undefined;
-    }
   }
 
   private async resolveUploadable(asset: VoiceAssetSource): Promise<Uploadable.FileLike> {
@@ -519,13 +332,11 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
       voiceId: voice.voiceId,
       name: voice.name ?? "Untitled Voice",
       state: this.deriveLifecycleState(voice),
-      language: voice.fineTuning?.language ?? voice.voiceVerification?.language,
       createdAt: this.getTimestampFromUnix(voice.createdAtUnix),
       updatedAt: undefined,
       metadata: {
         description: voice.description,
         labels: voice.labels,
-        verification: voice.voiceVerification,
       },
     };
   }
@@ -536,33 +347,5 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
     }
 
     return new Date(unix * 1000).toISOString();
-  }
-
-  private async executeHttpRequest(
-    url: string,
-    init: RequestInit & { method: string; headers?: Record<string, string> }
-  ): Promise<ElevenLabsHttpResponse<unknown>> {
-    const response = await this.httpClient(url, init);
-
-    return {
-      status: response.status,
-      headers: response.headers,
-      data: await this.safeParseJson(response),
-      raw: response,
-    };
-  }
-
-  private async safeParseJson(response: Response): Promise<unknown> {
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      return undefined;
-    }
-
-    try {
-      return await response.json();
-    } catch (error) {
-      this.logger.warn("Failed to parse ElevenLabs JSON response", { error });
-      return undefined;
-    }
   }
 }

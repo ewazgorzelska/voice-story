@@ -75,11 +75,16 @@ export async function generateStoryContent(input: StoryContentGenerationInput): 
     });
 
     // Parse the JSON response
+    const sanitizedContent = extractJsonPayload(result.content);
     let parsedResult: { content: string; teaser: string };
     try {
-      parsedResult = JSON.parse(result.content);
+      parsedResult = JSON.parse(sanitizedContent);
     } catch (error) {
-      logError("Failed to parse OpenRouter JSON response", { error, rawContent: result.content });
+      logError("Failed to parse OpenRouter JSON response", {
+        error,
+        rawContent: result.content,
+        sanitizedContent,
+      });
       throw new Error("Failed to parse story generation response");
     }
 
@@ -160,4 +165,31 @@ function buildUserPrompt(input: StoryContentGenerationInput): string {
 ${storyContent}
 
 Please create a personalized version of this story following the requirements specified in the system prompt. Return your response in the required JSON format.`;
+}
+
+/**
+ * Attempts to extract a JSON payload from OpenRouter responses,
+ * handling cases where the model wraps output in markdown code fences.
+ */
+function extractJsonPayload(rawContent: string): string {
+  if (!rawContent) {
+    return rawContent;
+  }
+
+  let candidate = rawContent.trim();
+
+  // Handle fenced code blocks like ```json ... ```
+  const fencedMatch = candidate.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch?.[1]) {
+    candidate = fencedMatch[1].trim();
+  }
+
+  const jsonStart = candidate.indexOf("{");
+  const jsonEnd = candidate.lastIndexOf("}");
+
+  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+    candidate = candidate.slice(jsonStart, jsonEnd + 1).trim();
+  }
+
+  return candidate;
 }

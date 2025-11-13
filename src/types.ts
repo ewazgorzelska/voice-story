@@ -1,5 +1,6 @@
 // src/types.ts
 
+import type { MouseEvent } from "react";
 import type { Database } from "./db/database.types";
 
 //
@@ -324,7 +325,7 @@ export interface GenerationSectionProps {
 /** Props for generate button */
 export interface GenerateButtonProps {
   /** Button click handler */
-  onClick?: () => void;
+  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   /** Whether button is disabled */
   disabled: boolean;
   /** Whether button is in loading state */

@@ -36,6 +36,12 @@ export async function initiate(
     .single();
 
   if (storyError || !story) {
+    logError("Story lookup failed:", {
+      error: storyError,
+      code: storyError?.code,
+      message: storyError?.message,
+      storyId: command.story_id,
+    });
     throw new Error("Story not found");
   }
 
@@ -56,30 +62,20 @@ export async function initiate(
     .single();
 
   if (insertError || !generation) {
-    logError("Failed to create story generation:", insertError);
-    throw new Error("Failed to create story generation");
-  }
-
-  // Trigger background processing
-  // In production, this should be replaced with a proper job queue (e.g., BullMQ, Inngest)
-  // For MVP, we trigger the processing endpoint asynchronously
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.PUBLIC_SITE_URL || "";
-
-  if (baseUrl) {
-    fetch(`${baseUrl}/api/story-generations/process`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        generation_id: generation.id,
-        user_id: userId,
-      }),
-    }).catch((error) => {
-      // Log but don't throw - the generation record is created
-      logError("Failed to trigger background processing:", error);
+    logError("Failed to create story generation:", {
+      error: insertError,
+      code: insertError?.code,
+      message: insertError?.message,
+      details: insertError?.details,
+      hint: insertError?.hint,
     });
-  } else {
-    logError("Cannot trigger background processing: base URL not available");
+    throw new Error(
+      insertError?.message || `Failed to create story generation: ${insertError?.code || "Unknown error"}`
+    );
   }
+
+  // Background processing is now triggered directly in the API endpoint
+  // This keeps the service layer focused on data operations
 
   return {
     id: generation.id,

@@ -659,7 +659,7 @@ export function createOpenRouterService(): OpenRouterService {
   const config: Partial<OpenRouterConfig> = {
     apiKey: import.meta.env.OPENROUTER_API_KEY,
     baseUrl: import.meta.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
-    defaultModel: import.meta.env.OPENROUTER_DEFAULT_MODEL || "anthropic/claude-3.5-sonnet",
+    defaultModel: import.meta.env.OPENROUTER_DEFAULT_MODEL || "anthropic/claude-4.5-sonnet",
     referer: import.meta.env.OPENROUTER_REFERER || import.meta.env.PUBLIC_SITE_URL,
     siteTitle: import.meta.env.OPENROUTER_SITE_TITLE || import.meta.env.PUBLIC_SITE_TITLE,
   };
