@@ -20,7 +20,7 @@ export const prerender = false;
 export const GET: APIRoute = async ({ params, url, locals }) => {
   try {
     // Check authentication
-    const userId = DEFAULT_USER_ID;
+    const userId = locals.user?.id || DEFAULT_USER_ID;
     if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,

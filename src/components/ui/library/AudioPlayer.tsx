@@ -129,6 +129,8 @@ const AudioPlayer = forwardRef<HTMLAudioElement, AudioPlayerProps>(({ audioUrl, 
       setError(null);
       setCurrentTime(0);
       setSeekValue(0);
+      // Explicitly load the audio to trigger metadata loading
+      audioRef.current.load();
     }
   }, [audioUrl]);
 
@@ -249,7 +251,7 @@ const AudioPlayer = forwardRef<HTMLAudioElement, AudioPlayerProps>(({ audioUrl, 
         ) : null}
       </div>
 
-      <audio ref={assignRef} preload="none" hidden aria-hidden="true">
+      <audio ref={assignRef} preload="metadata" hidden aria-hidden="true">
         <track kind="captions" src="data:text/vtt,WEBVTT" label="Captions unavailable" />
       </audio>
     </div>

@@ -43,6 +43,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
       if (audio.src !== url) {
         audio.src = url;
+        // Explicitly load the audio to ensure metadata is loaded
+        audio.load();
       }
 
       try {
