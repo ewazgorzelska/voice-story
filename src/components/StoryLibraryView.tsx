@@ -32,6 +32,7 @@ export default function StoryLibraryView() {
   );
 
   const hasErrors = useMemo(() => hasStoryPreferenceErrors(preferenceErrors), [preferenceErrors]);
+
   const isDefaultPreferences = useMemo(
     () => arePreferencesEqual(preferences, defaultPreferences),
     [preferences, defaultPreferences]
@@ -50,14 +51,15 @@ export default function StoryLibraryView() {
   }, []);
 
   const handleResetPreferences = useCallback(() => {
-    const defaults = createDefaultStoryPreferences();
+    // Create a new object to force React to recognize the change
+    const defaults = { ...defaultPreferences };
     setPreferences(defaults);
 
     const defaultErrors = validateStoryPreferences(defaults);
     setPreferenceErrors(defaultErrors);
 
     storeStoryPreferences(defaults);
-  }, []);
+  }, [defaultPreferences]);
 
   const { stories, pagination, isLoading, error, setCurrentPage } = useStoryLibrary({
     initialPage: 1,
