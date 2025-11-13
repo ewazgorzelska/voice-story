@@ -8,6 +8,10 @@ export const prerender = false;
 
 const { user, supabase } = Astro.locals;
 
+// Extract query parameters for success messages
+const url = new URL(Astro.request.url);
+const resetSuccess = url.searchParams.get("reset") === "success";
+
 if (user && supabase) {
   const { data: voiceSample, error: voiceSampleError } = await supabase
     .from("voice_samples")
@@ -31,6 +35,6 @@ if (user && supabase) {
 
 <AuthLayout title="Sign In - Voice Story">
   <div class="w-full max-w-md">
-    <LoginForm client:load />
+    <LoginForm showResetSuccess={resetSuccess} client:load />
   </div>
 </AuthLayout>

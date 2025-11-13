@@ -89,7 +89,7 @@ const GeneratedStoryCard = ({
         </div>
 
         {teaser ? (
-          <p className="text-sm text-muted-foreground line-clamp-3">{teaser}</p>
+          <p className="text-sm text-muted-foreground">{teaser}</p>
         ) : (
           <p className="text-sm text-muted-foreground italic">
             Teaser will appear here once the story finishes generating.

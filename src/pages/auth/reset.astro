@@ -3,24 +3,48 @@ import AuthLayout from "@/layouts/AuthLayout.astro";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-// Extract token from URL query parameters
+export const prerender = false;
+
+const { supabase } = Astro.locals;
+
+// Extract parameters from URL - Supabase sends "code" for PKCE flow
 const url = new URL(Astro.request.url);
-const token = url.searchParams.get("token");
-const type = url.searchParams.get("type");
+const code = url.searchParams.get("code");
 
-// Validate that we have a recovery token
-const isValidResetLink = type === "recovery" && token;
+let tokenExchangeError = false;
+let errorMessage = "";
 
-// Note: In the future, this page will also check for existing session
-// and redirect authenticated users to /library
+// If we have a code, exchange it for a session (PKCE flow)
+if (code && supabase) {
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("Failed to exchange code for session:", error);
+    tokenExchangeError = true;
+    errorMessage = error.message || "Failed to verify reset link";
+  }
+}
+
+// Check if user is now authenticated after code exchange
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// Show reset form if we have a user (either from code exchange or existing session)
+// and no exchange error occurred
+const showResetForm = user && !tokenExchangeError;
+
+// Show error if we had a code but exchange failed, or if there's no code and no user
+const showError = (code && tokenExchangeError) || (!code && !user);
 ---
 
 <AuthLayout title="Reset Password - Voice Story">
   <div class="w-full max-w-md">
     {
-      isValidResetLink && token ? (
-        <ResetPasswordForm token={token} client:load />
-      ) : (
+      showResetForm ? (
+        <ResetPasswordForm client:load />
+      ) : showError ? (
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-xl sm:text-2xl">Invalid reset link</CardTitle>
@@ -36,6 +60,7 @@ const isValidResetLink = type === "recovery" && token;
                 <p class="mt-1 text-destructive/80">
                   Password reset links expire after a certain time for security reasons.
                 </p>
+                {errorMessage && <p class="mt-2 text-xs font-mono text-destructive/70">Error: {errorMessage}</p>}
               </div>
               <a
                 href="/auth/forgot-password"
@@ -45,6 +70,13 @@ const isValidResetLink = type === "recovery" && token;
               </a>
             </div>
           </CardContent>
+        </Card>
+      ) : (
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-xl sm:text-2xl">Loading...</CardTitle>
+            <CardDescription className="text-sm">Verifying your reset link</CardDescription>
+          </CardHeader>
         </Card>
       )
     }

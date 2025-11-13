@@ -5,11 +5,7 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-interface ResetPasswordFormProps {
-  token: string;
-}
-
-const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
+const ResetPasswordForm = () => {
   const [formData, setFormData] = useState<ResetPasswordInput>({
     password: "",
     passwordConfirm: "",
@@ -50,19 +46,43 @@ const ResetPasswordForm = ({ token }: ResetPasswordFormProps) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token,
           password: formData.password,
+          passwordConfirm: formData.passwordConfirm,
         }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) {
-        if (data.error?.code === "EXPIRED_OR_INVALID_TOKEN") {
+      if (!response.ok || !data.success) {
+        const defaultMessage = "Something went wrong. Please try again or contact support.";
+        const errorCode: string | undefined = data.error?.code;
+
+        if (errorCode === "EXPIRED_OR_INVALID_TOKEN") {
           setErrors({ form: "This reset link is no longer valid. Request a new one." });
+        } else if (errorCode === "INVALID_INPUT") {
+          const fieldErrorsPayload = data.error?.details?.fieldErrors as Record<string, string[]> | undefined;
+
+          const nextErrors: Partial<Record<keyof ResetPasswordInput | "form", string>> = {};
+
+          if (fieldErrorsPayload) {
+            const fields: (keyof ResetPasswordInput)[] = ["password", "passwordConfirm"];
+            fields.forEach((field) => {
+              const messages = fieldErrorsPayload[field];
+              if (messages?.length) {
+                nextErrors[field] = messages[0];
+              }
+            });
+          }
+
+          if (Object.keys(nextErrors).length > 0) {
+            setErrors(nextErrors);
+          } else {
+            setErrors({ form: data.error?.message || defaultMessage });
+          }
         } else {
-          setErrors({ form: data.error?.message || "Something went wrong. Please try again or contact support." });
+          setErrors({ form: data.error?.message || defaultMessage });
         }
+
         setIsLoading(false);
         return;
       }

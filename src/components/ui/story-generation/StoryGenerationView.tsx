@@ -38,7 +38,7 @@ const StoryGenerationView = ({ story, userHasVoiceSample }: StoryGenerationViewP
   const handleComplete = useCallback(() => {
     // Prefer using navigation instead of direct window.location mutation
     if (typeof window !== "undefined") {
-      window.location.assign("/stories");
+      window.location.assign("/my-library");
     }
   }, []);
 

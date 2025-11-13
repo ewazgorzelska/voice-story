@@ -10,6 +10,8 @@ const PUBLIC_PATHS = new Set([
   "/auth/reset",
   "/api/auth/login",
   "/api/auth/register",
+  "/api/auth/password-reset",
+  "/api/auth/password-update",
   "/api/stories", // Public endpoint - browse stories without auth
 ]);
 

@@ -5,7 +5,11 @@ import Input from "@/components/ui/input";
 import Label from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-const LoginForm = () => {
+interface LoginFormProps {
+  showResetSuccess?: boolean;
+}
+
+const LoginForm = ({ showResetSuccess = false }: LoginFormProps) => {
   const [formData, setFormData] = useState<LoginInput>({
     email: "",
     password: "",
@@ -101,6 +105,15 @@ const LoginForm = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {showResetSuccess && (
+            <div
+              role="status"
+              className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400"
+            >
+              Password updated successfully! You can now sign in with your new password.
+            </div>
+          )}
+
           {errors.form && (
             <div
               role="alert"
