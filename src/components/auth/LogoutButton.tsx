@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LogOut } from "lucide-react";
 import Button from "@/components/ui/button";
 
 const LogoutButton = () => {
@@ -27,9 +28,19 @@ const LogoutButton = () => {
   };
 
   return (
-    <Button variant="outline" onClick={handleLogout} disabled={isLoading}>
-      {isLoading ? "Signing out..." : "Sign out"}
-    </Button>
+    <>
+      {/* Mobile view: Icon only */}
+      <LogOut
+        className="size-4 cursor-pointer mr-2"
+        onClick={handleLogout}
+        aria-label={isLoading ? "Signing out..." : "Sign out"}
+      />
+
+      {/* Desktop view: Full button with text */}
+      <Button variant="outline" onClick={handleLogout} disabled={isLoading} className="hidden sm:inline-flex">
+        {isLoading ? "Signing out..." : "Sign out"}
+      </Button>
+    </>
   );
 };
 
