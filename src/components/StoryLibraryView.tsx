@@ -17,8 +17,7 @@ import type { StoryGenerationPreferencesDto, StoryPreferencesFormErrors } from "
 const arePreferencesEqual = (left: StoryGenerationPreferencesDto, right: StoryGenerationPreferencesDto): boolean =>
   left.child_age === right.child_age &&
   left.duration_min_minutes === right.duration_min_minutes &&
-  left.duration_max_minutes === right.duration_max_minutes &&
-  (left.motif_prompt ?? null) === (right.motif_prompt ?? null);
+  left.duration_max_minutes === right.duration_max_minutes;
 
 export default function StoryLibraryView() {
   const defaultPreferences = useMemo(() => createDefaultStoryPreferences(), []);

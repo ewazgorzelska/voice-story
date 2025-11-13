@@ -65,7 +65,6 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
         child_age,
         duration_min_minutes,
         duration_max_minutes,
-        motif_prompt,
         stories (
           id,
           title,
@@ -119,7 +118,6 @@ export async function processStoryGeneration(input: ProcessGenerationInput): Pro
         childAge: generation.child_age,
         durationMinMinutes: generation.duration_min_minutes,
         durationMaxMinutes: generation.duration_max_minutes,
-        motifPrompt: generation.motif_prompt,
       });
     } catch (contentError) {
       logError("Story content generation failed", {

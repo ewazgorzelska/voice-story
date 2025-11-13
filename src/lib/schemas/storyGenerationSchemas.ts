@@ -2,21 +2,6 @@
 
 import { z } from "zod";
 
-const motifPromptSchema = z
-  .union([z.string(), z.null()])
-  .transform((value) => {
-    if (value === null) {
-      return null;
-    }
-    const trimmed = value.trim();
-    return trimmed.length === 0 ? null : trimmed;
-  })
-  .refine((value) => value === null || value.length <= 200, {
-    message: "motif_prompt cannot exceed 200 characters",
-  })
-  .optional()
-  .transform((value) => (value === undefined ? null : value));
-
 /**
  * Schema for POST /api/story-generations
  * Validates the story_id in the request body
@@ -48,7 +33,6 @@ export const InitGenerationSchema = z
       .int("duration_max_minutes must be an integer")
       .min(1, "duration_max_minutes must be at least 1")
       .max(60, "duration_max_minutes must be at most 60"),
-    motif_prompt: motifPromptSchema,
   })
   .refine((data) => data.duration_max_minutes > data.duration_min_minutes, {
     message: "duration_max_minutes must be greater than duration_min_minutes",

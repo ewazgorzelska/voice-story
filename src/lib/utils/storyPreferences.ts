@@ -1,7 +1,6 @@
 import type { StoryGenerationPreferencesDto, StoryPreferencesFormErrors } from "@/types";
 
 export const STORY_PREFERENCES_STORAGE_KEY = "voice-story:preferences";
-export const STORY_PREFERENCES_MOTIF_MAX_LENGTH = 200;
 
 const toIntegerOrNaN = (value: unknown): number => {
   if (typeof value === "number") {
@@ -24,15 +23,11 @@ export const createDefaultStoryPreferences = (): StoryGenerationPreferencesDto =
   child_age: 5,
   duration_min_minutes: 5,
   duration_max_minutes: 10,
-  motif_prompt: null,
 });
 
 export const sanitizeStoryPreferences = (values: StoryGenerationPreferencesDto): StoryGenerationPreferencesDto => {
-  const motif = values.motif_prompt?.slice(0, STORY_PREFERENCES_MOTIF_MAX_LENGTH).trim() ?? null;
-
   return {
     ...values,
-    motif_prompt: motif && motif.length > 0 ? motif : null,
   };
 };
 
@@ -67,10 +62,6 @@ export const validateStoryPreferences = (values: StoryGenerationPreferencesDto):
     errors.duration_range = "Maximum duration must be greater than minimum duration.";
   }
 
-  if (values.motif_prompt && values.motif_prompt.trim().length > STORY_PREFERENCES_MOTIF_MAX_LENGTH) {
-    errors.motif_prompt = `Motif description cannot exceed ${STORY_PREFERENCES_MOTIF_MAX_LENGTH} characters.`;
-  }
-
   return errors;
 };
 
@@ -93,7 +84,6 @@ export const loadStoredStoryPreferences = (): StoryGenerationPreferencesDto | nu
       child_age: toIntegerOrNaN(parsed?.child_age),
       duration_min_minutes: toIntegerOrNaN(parsed?.duration_min_minutes),
       duration_max_minutes: toIntegerOrNaN(parsed?.duration_max_minutes),
-      motif_prompt: typeof parsed?.motif_prompt === "string" ? parsed?.motif_prompt : null,
     };
 
     const sanitized = sanitizeStoryPreferences(candidate);
@@ -118,7 +108,6 @@ export const storeStoryPreferences = (values: StoryGenerationPreferencesDto): vo
     child_age: values.child_age,
     duration_min_minutes: values.duration_min_minutes,
     duration_max_minutes: values.duration_max_minutes,
-    motif_prompt: values.motif_prompt,
   };
 
   try {

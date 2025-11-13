@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { AlertCircleIcon, BabyIcon, Clock3Icon, HeadphonesIcon, SparklesIcon, Trash2Icon } from "lucide-react";
+import { AlertCircleIcon, BabyIcon, Clock3Icon, HeadphonesIcon, Trash2Icon } from "lucide-react";
 
 import Button from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,6 @@ const GeneratedStoryCard = ({
   const helperText = useMemo(() => STATUS_HELPER_TEXT[status], [status]);
   const playableAudioUrl = hasPlayableAudio(status, result_url) ? (result_url as string) : null;
   const durationLabel = `${preferences.duration_min_minutes}-${preferences.duration_max_minutes} min`;
-  const hasMotif = Boolean(preferences.motif_prompt);
 
   const handlePlay = () => {
     if (!playableAudioUrl) {
@@ -85,7 +84,6 @@ const GeneratedStoryCard = ({
         <div className="flex flex-wrap gap-2">
           <Tag icon={<BabyIcon aria-hidden="true" />}>Age {preferences.child_age}</Tag>
           <Tag icon={<Clock3Icon aria-hidden="true" />}>{durationLabel}</Tag>
-          {hasMotif ? <Tag icon={<SparklesIcon aria-hidden="true" />}>{preferences.motif_prompt}</Tag> : null}
         </div>
 
         {teaser ? (

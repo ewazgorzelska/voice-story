@@ -120,7 +120,6 @@ export interface Database {
           duration_min_minutes: number;
           id: string;
           metadata: Json | null;
-          motif_prompt: string | null;
           progress: number;
           result_url: string;
           status: Database["public"]["Enums"]["generation_status"];
@@ -136,7 +135,6 @@ export interface Database {
           duration_min_minutes: number;
           id?: string;
           metadata?: Json | null;
-          motif_prompt?: string | null;
           progress?: number;
           result_url?: string;
           status?: Database["public"]["Enums"]["generation_status"];
@@ -152,7 +150,6 @@ export interface Database {
           duration_min_minutes?: number;
           id?: string;
           metadata?: Json | null;
-          motif_prompt?: string | null;
           progress?: number;
           result_url?: string;
           status?: Database["public"]["Enums"]["generation_status"];

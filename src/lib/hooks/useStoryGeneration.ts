@@ -14,7 +14,6 @@ const DEFAULT_GENERATION_PREFERENCES: StoryGenerationPreferencesInput = {
   child_age: 5,
   duration_min_minutes: 5,
   duration_max_minutes: 10,
-  motif_prompt: null,
 };
 
 interface UseStoryGenerationParams {
@@ -65,7 +64,6 @@ export function useStoryGeneration({
         child_age: preferences.child_age,
         duration_min_minutes: preferences.duration_min_minutes,
         duration_max_minutes: preferences.duration_max_minutes,
-        motif_prompt: preferences.motif_prompt ?? null,
       };
     }
   }, [preferences]);
@@ -93,8 +91,7 @@ export function useStoryGeneration({
       candidate.preferences !== null &&
       typeof candidate.preferences.child_age === "number" &&
       typeof candidate.preferences.duration_min_minutes === "number" &&
-      typeof candidate.preferences.duration_max_minutes === "number" &&
-      (candidate.preferences.motif_prompt === null || typeof candidate.preferences.motif_prompt === "string");
+      typeof candidate.preferences.duration_max_minutes === "number";
     return (
       typeof candidate.id === "string" &&
       typeof candidate.story_id === "string" &&
@@ -269,7 +266,7 @@ export function useStoryGeneration({
     retryCountRef.current = 0;
 
     try {
-      const { child_age, duration_min_minutes, duration_max_minutes, motif_prompt } =
+      const { child_age, duration_min_minutes, duration_max_minutes } =
         preferencesRef.current ?? DEFAULT_GENERATION_PREFERENCES;
 
       const command: CreateStoryGenerationCommand = {
@@ -277,7 +274,6 @@ export function useStoryGeneration({
         child_age,
         duration_min_minutes,
         duration_max_minutes,
-        motif_prompt: motif_prompt ?? null,
       };
 
       const response = await fetch("/api/story-generations", {

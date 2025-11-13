@@ -76,18 +76,18 @@ type StoryGenRow = Database["public"]["Tables"]["story_generations"]["Row"];
 /** User-supplied preferences that influence story generation */
 export type StoryGenerationPreferencesDto = Pick<
   StoryGenRow,
-  "child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt"
+  "child_age" | "duration_min_minutes" | "duration_max_minutes"
 >;
 
 /** Errors returned by story preferences form validation */
 export type StoryPreferencesFormErrors = Partial<
-  Record<"child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt" | "duration_range", string>
+  Record<"child_age" | "duration_min_minutes" | "duration_max_minutes" | "duration_range", string>
 >;
 
 /** Command Model for POST /api/story-generations */
 export type CreateStoryGenerationCommand = Pick<
   StoryGenInsert,
-  "story_id" | "child_age" | "duration_min_minutes" | "duration_max_minutes" | "motif_prompt"
+  "story_id" | "child_age" | "duration_min_minutes" | "duration_max_minutes"
 >;
 
 /** Response DTO for POST /api/story-generations */
@@ -372,8 +372,6 @@ export interface StoryPreferencesFormProps {
   errors: StoryPreferencesFormErrors;
   /** Callback when values change */
   onChange: (values: StoryGenerationPreferencesDto) => void;
-  /** Maximum motif description length */
-  maxMotifLength?: number;
 }
 
 /** Standardized API error */

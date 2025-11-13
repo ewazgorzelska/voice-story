@@ -56,9 +56,8 @@ export async function initiate(
       child_age: command.child_age,
       duration_min_minutes: command.duration_min_minutes,
       duration_max_minutes: command.duration_max_minutes,
-      motif_prompt: command.motif_prompt ?? null,
     })
-    .select("id, status, progress, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt")
+    .select("id, status, progress, teaser, child_age, duration_min_minutes, duration_max_minutes")
     .single();
 
   if (insertError || !generation) {
@@ -86,7 +85,6 @@ export async function initiate(
       child_age: generation.child_age,
       duration_min_minutes: generation.duration_min_minutes,
       duration_max_minutes: generation.duration_max_minutes,
-      motif_prompt: generation.motif_prompt,
     },
   };
 }
@@ -115,7 +113,7 @@ export async function list(
   let query = supabase
     .from("story_generations")
     .select(
-      "id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt",
+      "id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes",
       { count: "exact" }
     )
     .eq("user_id", userId)
@@ -146,7 +144,6 @@ export async function list(
         child_age: gen.child_age,
         duration_min_minutes: gen.duration_min_minutes,
         duration_max_minutes: gen.duration_max_minutes,
-        motif_prompt: gen.motif_prompt,
       },
     })),
     meta: {
@@ -173,9 +170,7 @@ export async function getById(
 ): Promise<StoryGenerationDto> {
   const { data, error } = await supabase
     .from("story_generations")
-    .select(
-      "id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes, motif_prompt"
-    )
+    .select("id, story_id, status, progress, result_url, teaser, child_age, duration_min_minutes, duration_max_minutes")
     .eq("id", generationId)
     .eq("user_id", userId)
     .single();
@@ -195,7 +190,6 @@ export async function getById(
       child_age: data.child_age,
       duration_min_minutes: data.duration_min_minutes,
       duration_max_minutes: data.duration_max_minutes,
-      motif_prompt: data.motif_prompt,
     },
   };
 }

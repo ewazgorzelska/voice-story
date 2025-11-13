@@ -1,6 +1,5 @@
 import { useId, type ChangeEvent } from "react";
 import { cn } from "@/lib/utils";
-import { STORY_PREFERENCES_MOTIF_MAX_LENGTH } from "@/lib/utils/storyPreferences";
 import type { StoryPreferencesFormProps, StoryGenerationPreferencesDto } from "@/types";
 
 const baseInputClasses =
@@ -26,18 +25,10 @@ const getUpdatedPreferences = (
   [field]: clampValue(value),
 });
 
-const StoryPreferencesForm = ({
-  values,
-  errors,
-  onChange,
-  maxMotifLength = STORY_PREFERENCES_MOTIF_MAX_LENGTH,
-}: StoryPreferencesFormProps) => {
+const StoryPreferencesForm = ({ values, errors, onChange }: StoryPreferencesFormProps) => {
   const childAgeId = useId();
   const minDurationId = useId();
   const maxDurationId = useId();
-  const motifId = useId();
-
-  const motifLength = values.motif_prompt?.length ?? 0;
 
   const handleNumberChange =
     (field: "child_age" | "duration_min_minutes" | "duration_max_minutes") =>
@@ -48,15 +39,6 @@ const StoryPreferencesForm = ({
 
       onChange(getUpdatedPreferences(values, field, nextValue));
     };
-
-  const handleMotifChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    const raw = event.target.value.slice(0, maxMotifLength);
-    const trimmed = raw.trim();
-    onChange({
-      ...values,
-      motif_prompt: trimmed.length === 0 ? null : raw,
-    });
-  };
 
   return (
     <fieldset className="space-y-6 rounded-lg border border-border/70 bg-card/60 px-4 py-5 shadow-sm sm:px-6 sm:py-6">
@@ -151,35 +133,6 @@ const StoryPreferencesForm = ({
             </p>
           ) : null}
         </div>
-      </div>
-
-      <div>
-        <label htmlFor={motifId} className={labelClasses}>
-          Motif or theme<span className="text-muted-foreground text-xs font-normal">(optional)</span>
-        </label>
-        <textarea
-          id={motifId}
-          rows={3}
-          spellCheck={false}
-          maxLength={maxMotifLength}
-          value={values.motif_prompt ?? ""}
-          placeholder="e.g. a brave fox and a shimmering moonlight forest"
-          className={cn(baseInputClasses, "resize-none", errors.motif_prompt && "border-destructive/70")}
-          aria-invalid={Boolean(errors.motif_prompt)}
-          aria-describedby={`${motifId}-helper${errors.motif_prompt ? ` ${motifId}-error` : ""}`}
-          onChange={handleMotifChange}
-        />
-        <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground" id={`${motifId}-helper`}>
-          <span>Describe the vibe or characters you have in mind.</span>
-          <span>
-            {motifLength}/{maxMotifLength}
-          </span>
-        </div>
-        {errors.motif_prompt ? (
-          <p id={`${motifId}-error`} className={errorTextClasses}>
-            {errors.motif_prompt}
-          </p>
-        ) : null}
       </div>
     </fieldset>
   );

@@ -20,8 +20,6 @@ export interface StoryContentGenerationInput {
   durationMinMinutes: number;
   /** Maximum desired duration in minutes */
   durationMaxMinutes: number;
-  /** Optional thematic motif or prompt */
-  motifPrompt: string | null;
 }
 
 export interface StoryContentGenerationOutput {
@@ -48,7 +46,6 @@ export async function generateStoryContent(input: StoryContentGenerationInput): 
       childAge: input.childAge,
       durationMin: input.durationMinMinutes,
       durationMax: input.durationMaxMinutes,
-      hasMotif: !!input.motifPrompt,
     });
 
     const openRouter = createOpenRouterService();
@@ -120,9 +117,9 @@ export async function generateStoryContent(input: StoryContentGenerationInput): 
  * Builds the system prompt for story generation
  */
 function buildSystemPrompt(input: StoryContentGenerationInput): string {
-  const { childAge, durationMinMinutes, durationMaxMinutes, motifPrompt } = input;
+  const { childAge, durationMinMinutes, durationMaxMinutes } = input;
 
-  let prompt = `You are an expert children's story writer specializing in personalized bedtime stories.
+  const prompt = `You are an expert children's story writer specializing in personalized bedtime stories.
 
 Your task is to adapt a classic story for a ${childAge}-year-old child. The story should be engaging, age-appropriate, and suitable for narration.
 
@@ -131,13 +128,7 @@ IMPORTANT REQUIREMENTS:
 2. **Age Appropriateness**: Adjust vocabulary, sentence complexity, and themes to suit a ${childAge}-year-old child.
 3. **Narration-Friendly**: Write in a flowing, narrative style suitable for audio. Avoid complex formatting, bullet points, or visual elements.
 4. **Engaging**: Use vivid descriptions, dialogue, and emotional moments to capture the child's imagination.
-5. **Safe Content**: Ensure the story is comforting and appropriate for bedtime. Avoid frightening or overly intense content.`;
-
-  if (motifPrompt) {
-    prompt += `\n6. **Thematic Element**: Incorporate this theme or motif into the story: "${motifPrompt}"`;
-  }
-
-  prompt += `
+5. **Safe Content**: Ensure the story is comforting and appropriate for bedtime. Avoid frightening or overly intense content.
 
 OUTPUT FORMAT:
 You must respond with valid JSON containing exactly two fields:

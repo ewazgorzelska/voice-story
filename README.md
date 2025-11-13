@@ -8,7 +8,7 @@
 
 Voice Story App is a web application that allows parents and loved ones to create personalized bedtime stories for children, narrated in their own cloned voice. Using AI-powered voice cloning, users record a short voice sample and generate audio narrations of classic fairy tales, providing a magical and comforting experience — even when they can’t be there in person.
 
-During story generation, users specify the child’s age, preferred audio length range, and (optionally) a guiding motif so OpenRouter can tailor the narration. Completed stories return a short teaser summary and surface the selected preferences inside the personal library, making it easy to preview and curate bedtime adventures.
+During story generation, users specify the child’s age, preferred audio length range so OpenRouter can tailor the narration. Completed stories return a short teaser summary and surface the selected preferences inside the personal library, making it easy to preview and curate bedtime adventures.
 
 ## Table of Contents
 
