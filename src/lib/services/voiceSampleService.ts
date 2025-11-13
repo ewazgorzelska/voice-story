@@ -10,7 +10,7 @@ import { createVoiceModel, createElevenLabsService } from "./elevenlabsService";
  * These phrases are designed to capture a variety of phonemes
  */
 const VERIFICATION_PHRASES = [
-  "Wiewiórka Weronika i żaba Żaneta grały w berka, zwinne i szybkie, pojawiały się i znikały między krzakami jak kolorowe błyski. Jeleń Julian ćwiczył równowagę, stąpając po kłodach. A zając Zdzisław, jak to on, urządzał pokaz swoich najdziwniejszych min, a każda kolejna wywoływała coraz to większą salwę śmiechu. Wśród zwierząt przebywających na polanie brakowało tylko jednej postaci – lisa Karola. Znany z błyskotliwego dowcipu i zaskakujących pomysłów, zawsze znajdował sposób, by rozśmieszyć wszystkich… Czasem aż za bardzo. Karol był sprytny, żywiołowy i wiecznie w ruchu – lubił być w centrum uwagi, choć nie zawsze wiedział, kiedy zwolnić.",
+  "Wiewiórka Weronika i żaba Żaneta grały w berka, zwinne i szybkie, pojawiały się i znikały między krzakami jak kolorowe błyski. Jeleń Julian ćwiczył równowagę, stąpając po kłodach.",
   "Sometimes the smallest things take up the most room in your heart, and honey always tastes better when you share it with friends who truly understand the simple joys of life in the Hundred Acre Wood.",
   "When you wake up in the morning and think of something that makes you happy, that's going to be the very best day of all, filled with wonderful adventures and perhaps a smackerel of honey or two.",
   "There's nothing better than a long walk through the forest with a friend who understands you without words and shares every moment with you, exploring the wonders of nature and discovering new places together.",
