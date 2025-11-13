@@ -31,7 +31,7 @@ const LogoutButton = () => {
     <>
       {/* Mobile view: Icon only */}
       <LogOut
-        className="size-4 cursor-pointer mr-2"
+        className="size-4 sm:hidden cursor-pointer mr-2"
         onClick={handleLogout}
         aria-label={isLoading ? "Signing out..." : "Sign out"}
       />
