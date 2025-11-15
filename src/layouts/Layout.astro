@@ -21,6 +21,16 @@ const currentPath = Astro.url.pathname;
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <script
+      is:inline
+      set:html={`
+      const themeKey = "voice-story-theme";
+      const savedTheme = localStorage.getItem(themeKey);
+      if (savedTheme === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    `}
+    />
   </head>
   <body>
     {hideNav ? null : <NavBar currentPath={currentPath} user={user} />}

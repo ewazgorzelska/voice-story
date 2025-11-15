@@ -13,6 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import AppearanceSettings from "@/components/AppearanceSettings";
 
 const AccountView: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -86,6 +87,8 @@ const AccountView: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <AppearanceSettings />
+
       <Card>
         <CardHeader>
           <CardTitle>Voice Sample</CardTitle>
