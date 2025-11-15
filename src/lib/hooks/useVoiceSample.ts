@@ -104,7 +104,7 @@ export function useVoiceSample(): UseVoiceSampleReturn {
 
       const data = await response.json();
       setSampleExists(true);
-      
+
       // Set success message from API response
       if (data.message) {
         setSuccessMessage(data.message);

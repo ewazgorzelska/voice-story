@@ -5,10 +5,10 @@ import { logError } from "@/lib/logger";
 
 export const prerender = false;
 
-type LoginPayload = {
+interface LoginPayload {
   email: string;
   password: string;
-};
+}
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -170,4 +170,3 @@ export const POST: APIRoute = async ({ request, locals }) => {
     );
   }
 };
-

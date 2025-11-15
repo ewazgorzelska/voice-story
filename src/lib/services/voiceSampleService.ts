@@ -35,7 +35,7 @@ export function getRandomPhrase(): string {
  * @param text Text to normalize
  * @returns Normalized text
  */
-function normalizeText(text: string): string {
+export function normalizeText(text: string): string {
   return text
     .toLowerCase()
     .replace(/[.,!?;:"""„]/g, "") // Remove punctuation
@@ -49,7 +49,7 @@ function normalizeText(text: string): string {
  * @param str2 Second string
  * @returns Similarity score between 0 and 1
  */
-function calculateSimilarity(str1: string, str2: string): number {
+export function calculateSimilarity(str1: string, str2: string): number {
   const norm1 = normalizeText(str1);
   const norm2 = normalizeText(str2);
 
