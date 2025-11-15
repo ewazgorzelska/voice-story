@@ -23,7 +23,7 @@ export function useTheme() {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-    
+
     // Apply theme to document
     const root = document.documentElement;
     if (newTheme === "dark") {
@@ -45,4 +45,3 @@ export function useTheme() {
     mounted,
   };
 }
-
