@@ -7,6 +7,7 @@
 - TypeScript 5
 - Tailwind CSS 4
 - Shadcn/UI
+- React Hook Form
 
 ## Backend
 
@@ -17,8 +18,17 @@
 - Openrouter.ai (multi-model orchestration & spending caps)
 - ElevenLabs (voice-cloning API)
 
+## TESTING
+
+- Vitest
+
 ## CI/CD & Hosting
 
 - GitHub Actions (build/test/deploy)
 - Docker (containerization)
 - DigitalOcean (Docker-based hosting)
+
+## OTHER
+
+- ESLint,
+- Prettier
