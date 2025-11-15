@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import Progress from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import type { GenerationStatus, ProgressDisplayProps } from "@/types";
 
 const STATUS_MESSAGES: Record<GenerationStatus, string> = {

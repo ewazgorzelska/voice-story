@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import AudioPlayer from "@/components/ui/library/AudioPlayer";
 import ProgressDisplay from "@/components/ui/library/ProgressDisplay";
 import StatusBadge from "@/components/ui/library/StatusBadge";
-import Tag from "@/components/ui/tag";
+import { Tag } from "@/components/ui/tag";
 import { cn } from "@/lib/utils";
 import type { GeneratedStoryCardProps } from "@/types";
 

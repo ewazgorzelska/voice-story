@@ -1,4 +1,4 @@
-import Progress from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import type { GenerationProgressDisplayProps } from "@/types";
 import StatusIndicator from "./StatusIndicator";
 import EstimatedTimeDisplay from "./EstimatedTimeDisplay";

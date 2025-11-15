@@ -99,30 +99,53 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { email, password } = validationResult.data;
 
   try {
+    // Check if user already exists using admin API
+    const supabaseUrl = import.meta.env.SUPABASE_URL;
+    const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (supabaseServiceKey) {
+      // Use admin client to check if user exists
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      });
+
+      const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (listError) {
+        logError("Error checking existing users:", listError);
+      } else if (existingUsers && existingUsers.users) {
+        const userExists = existingUsers.users.some((user) => user.email === email);
+        if (userExists) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: {
+                code: "EMAIL_IN_USE",
+                message: "This email is already registered.",
+              },
+            }),
+            {
+              status: 409,
+              headers: jsonHeaders,
+            }
+          );
+        }
+      }
+    } else {
+      logError("SUPABASE_SERVICE_ROLE_KEY not configured - cannot check for existing users");
+    }
+
+    // User doesn't exist, proceed with signup
     const { error } = await locals.supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) {
-      const normalizedMessage = error.message?.toLowerCase() ?? "";
-
-      if (normalizedMessage.includes("already registered")) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: {
-              code: "EMAIL_IN_USE",
-              message: "This email is already registered.",
-            },
-          }),
-          {
-            status: 409,
-            headers: jsonHeaders,
-          }
-        );
-      }
-
       logError("Supabase sign up error:", error);
 
       return new Response(

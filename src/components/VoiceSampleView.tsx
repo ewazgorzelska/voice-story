@@ -7,7 +7,7 @@ import PlaybackPreview from "./ui/voice-sample/PlaybackPreview";
 import ButtonGroup from "./ui/voice-sample/ButtonGroup";
 import ProgressIndicator from "./ui/voice-sample/ProgressIndicator";
 import { Checkbox } from "@/components/ui/checkbox";
-import Label from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 
 type RecordingState = "idle" | "recording" | "recorded";
 

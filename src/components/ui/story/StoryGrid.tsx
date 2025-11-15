@@ -1,5 +1,5 @@
 import StoryCard from "@/components/ui/story/StoryCard";
-import SkeletonCard from "@/components/ui/story/SkeletonCard";
+import { SkeletonCard } from "@/components/ui/story/SkeletonCard";
 import type { StorySummaryDto } from "@/types";
 
 interface StoryGridProps {

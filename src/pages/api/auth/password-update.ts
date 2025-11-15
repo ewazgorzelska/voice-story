@@ -12,10 +12,10 @@ interface PasswordUpdatePayload {
 // Password validation: minimum 12 chars, must include 1 uppercase, 1 lowercase, 1 digit
 const passwordSchema = z
   .string()
-  .min(8, "Use at least 8 characters with upper, lower, and a number.")
-  .regex(/[A-Z]/, "Use at least 8 characters with upper, lower, and a number.")
-  .regex(/[a-z]/, "Use at least 8 characters with upper, lower, and a number.")
-  .regex(/[0-9]/, "Use at least 8 characters with upper, lower, and a number.");
+  .min(12, "Use at least 12 characters with upper, lower, and a number.")
+  .regex(/[A-Z]/, "Use at least 12 characters with upper, lower, and a number.")
+  .regex(/[a-z]/, "Use at least 12 characters with upper, lower, and a number.")
+  .regex(/[0-9]/, "Use at least 12 characters with upper, lower, and a number.");
 
 const passwordUpdateSchema = z
   .object({

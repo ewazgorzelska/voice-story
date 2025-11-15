@@ -19,4 +19,4 @@ const Progress = ({ className, value, ...props }: React.ComponentProps<typeof Pr
   );
 };
 
-export default Progress;
+export { Progress };

@@ -1,107 +1,54 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, type RegisterInput } from "@/lib/validation/authSchemas";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/input";
-import Label from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { register as registerUser } from "@/lib/services/authService";
 
 export default function RegisterForm() {
-  const [formData, setFormData] = useState<RegisterInput>({
-    email: "",
-    password: "",
-    passwordConfirm: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterInput | "form", string>>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear field error on change
-    if (errors[name as keyof RegisterInput]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-    if (successMessage) {
-      setSuccessMessage(null);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
+  const onSubmit = async (data: RegisterInput) => {
     setSuccessMessage(null);
-    setIsLoading(true);
-
-    // Client-side validation
-    const validation = registerSchema.safeParse(formData);
-    if (!validation.success) {
-      const fieldErrors: Partial<Record<keyof RegisterInput, string>> = {};
-      validation.error.errors.forEach((err) => {
-        if (err.path[0]) {
-          fieldErrors[err.path[0] as keyof RegisterInput] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        const defaultMessage = "Something went wrong. Please try again or contact support.";
-        const errorCode: string | undefined = data.error?.code;
-
-        if (errorCode === "EMAIL_IN_USE") {
-          setErrors({ email: "This email is already registered." });
-        } else if (errorCode === "INVALID_INPUT") {
-          const fieldErrorsPayload = data.error?.details?.fieldErrors as Record<string, string[]> | undefined;
-
-          const nextErrors: Partial<Record<keyof RegisterInput | "form", string>> = {};
-
-          if (fieldErrorsPayload) {
-            const fields: (keyof RegisterInput)[] = ["email", "password", "passwordConfirm"];
-            fields.forEach((field) => {
-              const messages = fieldErrorsPayload[field];
-              if (messages?.length) {
-                nextErrors[field] = messages[0];
-              }
-            });
-          }
-
-          if (Object.keys(nextErrors).length > 0) {
-            setErrors(nextErrors);
-          } else {
-            setErrors({ form: data.error?.message || defaultMessage });
-          }
-        } else {
-          setErrors({ form: data.error?.message || defaultMessage });
-        }
-
-        setIsLoading(false);
-        return;
-      }
-
+      const result = await registerUser(data);
       setSuccessMessage(
-        data.data?.message || "Account created! Check your email to confirm your address before signing in."
+        result.message || "Account created! Check your email to confirm your address before signing in."
       );
-      setFormData({
-        email: "",
-        password: "",
-        passwordConfirm: "",
-      });
-      setIsLoading(false);
-    } catch {
-      setErrors({ form: "Something went wrong. Please try again or contact support." });
-      setIsLoading(false);
+      reset();
+    } catch (error: unknown) {
+      const err = error as { code?: string; message?: string; details?: unknown };
+      if (err.code === "EMAIL_IN_USE") {
+        setError("email", { message: "This email is already registered." });
+      } else if (
+        err.code === "INVALID_INPUT" &&
+        err.details &&
+        typeof err.details === "object" &&
+        "fieldErrors" in err.details
+      ) {
+        const fieldErrors = err.details.fieldErrors as Record<string, string[]>;
+        Object.entries(fieldErrors).forEach(([field, messages]) => {
+          if (messages.length > 0) {
+            setError(field as keyof RegisterInput, { message: messages[0] });
+          }
+        });
+      } else {
+        setError("root.form", {
+          message: err.message || "Something went wrong. Please try again or contact support.",
+        });
+      }
     }
   };
 
@@ -112,7 +59,7 @@ export default function RegisterForm() {
         <CardDescription className="text-sm">Sign up to start creating personalized voice stories</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {successMessage && (
             <div
               role="status"
@@ -123,12 +70,12 @@ export default function RegisterForm() {
             </div>
           )}
 
-          {errors.form && (
+          {errors.root?.form && (
             <div
               role="alert"
               className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
             >
-              {errors.form}
+              {errors.root.form.message}
             </div>
           )}
 
@@ -136,19 +83,17 @@ export default function RegisterForm() {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              name="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isLoading}
+              disabled={isSubmitting}
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? "email-error" : undefined}
+              {...register("email")}
             />
             {errors.email && (
               <p id="email-error" className="text-sm text-destructive">
-                {errors.email}
+                {errors.email.message}
               </p>
             )}
           </div>
@@ -157,19 +102,17 @@ export default function RegisterForm() {
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
-              name="password"
               type="password"
               autoComplete="new-password"
               placeholder="Create a strong password"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isLoading}
+              disabled={isSubmitting}
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? "password-error" : undefined}
+              {...register("password")}
             />
             {errors.password && (
               <p id="password-error" className="text-sm text-destructive">
-                {errors.password}
+                {errors.password.message}
               </p>
             )}
             <p className="text-xs text-muted-foreground">
@@ -181,25 +124,23 @@ export default function RegisterForm() {
             <Label htmlFor="passwordConfirm">Confirm Password</Label>
             <Input
               id="passwordConfirm"
-              name="passwordConfirm"
               type="password"
               autoComplete="new-password"
               placeholder="Confirm your password"
-              value={formData.passwordConfirm}
-              onChange={handleChange}
-              disabled={isLoading}
+              disabled={isSubmitting}
               aria-invalid={!!errors.passwordConfirm}
               aria-describedby={errors.passwordConfirm ? "passwordConfirm-error" : undefined}
+              {...register("passwordConfirm")}
             />
             {errors.passwordConfirm && (
               <p id="passwordConfirm-error" className="text-sm text-destructive">
-                {errors.passwordConfirm}
+                {errors.passwordConfirm.message}
               </p>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Create account"}
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Create account"}
           </Button>
 
           <p className="text-xs text-muted-foreground">

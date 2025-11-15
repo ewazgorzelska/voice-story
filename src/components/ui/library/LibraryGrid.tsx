@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import SkeletonCard from "@/components/ui/story/SkeletonCard";
+import { SkeletonCard } from "@/components/ui/story/SkeletonCard";
 import EmptyLibraryState from "@/components/ui/library/EmptyLibraryState";
 import GeneratedStoryCard from "@/components/ui/library/GeneratedStoryCard";
 import type { LibraryGridProps } from "@/types";

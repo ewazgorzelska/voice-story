@@ -21,4 +21,4 @@ const Tag = ({ children, icon, className }: TagProps) => {
   );
 };
 
-export default Tag;
+export { Tag };

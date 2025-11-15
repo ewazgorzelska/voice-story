@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardFooter } from "@/components/ui/card";
-import Skeleton from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SkeletonCard = () => {
   return (
@@ -15,4 +15,4 @@ const SkeletonCard = () => {
   );
 };
 
-export default SkeletonCard;
+export { SkeletonCard };
