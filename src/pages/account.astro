@@ -1,0 +1,10 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import AccountView from "@/components/AccountView.tsx";
+---
+
+<Layout title="Account Settings | Voice Story">
+  <main class="container mx-auto px-4 py-8">
+    <AccountView client:load />
+  </main>
+</Layout>

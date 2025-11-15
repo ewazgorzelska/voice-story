@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Mic, Square } from "lucide-react";
-import Button from "../button";
+import { Button } from "../button";
 
 type RecordingState = "idle" | "recording" | "recorded";
 

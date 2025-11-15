@@ -2,7 +2,9 @@
 import Layout from "@/layouts/Layout.astro";
 import MyLibraryView from "@/components/MyLibraryView";
 
-const session = await Astro.locals.supabase.auth.getSession();
+const {
+  data: { session },
+} = await Astro.locals.supabase.auth.getSession();
 
 if (!session) {
   return Astro.redirect("/login");

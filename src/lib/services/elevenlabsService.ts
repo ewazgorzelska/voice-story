@@ -189,6 +189,14 @@ export class ElevenLabsService {
     }
   }
 
+  public async deleteVoice(voiceId: string): Promise<void> {
+    try {
+      await this._apiClient.deleteVoice(voiceId);
+    } catch (error) {
+      throw this._mapSdkError(error, "deleteVoice");
+    }
+  }
+
   /**
    * Transcribes audio to text using ElevenLabs Scribe
    * @param audioFile Audio file buffer or URL to the audio file to transcribe

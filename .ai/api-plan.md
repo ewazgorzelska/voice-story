@@ -10,6 +10,22 @@
 
 ## 2. Endpoints
 
+### 2.1 User Account Management
+
+#### POST /api/profile/consent
+
+- Description: Records the user's explicit consent for voice cloning.
+- Headers: `Authorization: Bearer <token>`
+- Response 200: OK
+
+#### DELETE /api/account
+
+- Description: Schedules the user's account for permanent deletion.
+- Headers: `Authorization: Bearer <token>`
+- Response 202: Accepted
+- Errors:
+  - 409: Account already scheduled for deletion
+
 ### 2.2 Voice Sample Management
 
 #### GET /api/voice-sample/phrase
@@ -38,6 +54,14 @@
 - Errors:
   - 409: "Voice sample already exists"
   - 422: Validation errors
+
+#### DELETE /api/voice-sample
+
+- Description: Delete the authenticated user's voice sample and the associated voice clone.
+- Headers: `Authorization: Bearer <token>`
+- Response 204: No Content
+- Errors:
+  - 404: If voice sample is not found
 
 #### PATCH /api/voice-sample/:id/verify
 
@@ -179,26 +203,5 @@
 
 ## 4. Validation & Business Logic
 
-- **VoiceSample**: Enforce one sample per user (UNIQUE constraint). Validate phrase and file format.
-- **StoryGenerations**: Enforce `story_id` exists. Validate `child_age` (integer, 0–18), `duration_min_minutes`/`duration_max_minutes` (integers, 1–30, min < max), `motif_prompt` length ≤ 200 characters, and initialize `status='pending'`, `progress=0`.
-- **Progress**: Must be integer 0–100.
-- **Enum**: `status` must be one of `(pending, in_progress, completed, failed)`.
-
-### Pagination & Filtering
-
-- Apply limits and offsets using `page` & `pageSize` with defaults (e.g., 10 per page).
-- Filter story-generations by `status`.
-
-### Error Handling
-
-- Standardize on JSON error responses:
-  ```json
-  { "error": { "code": number, "message": "string" } }
-  ```
-- Use 4xx codes for client errors and 5xx for server errors.
-
-### Rate Limiting & Security
-
-- Rate limit story-generation requests (e.g., 5 per minute) to prevent abuse.
-- Sanitize inputs and guard against injection.
-- Serve audio files via presigned URLs from Supabase Storage with E2EE in transit.
+- **VoiceSample**: Enforce one sample per user (UNIQUE constraint). Validate phrase and file format. Before creating a voice sample, the service must verify that the user has provided explicit consent for voice cloning.
+- **StoryGenerations**: Enforce `story_id`

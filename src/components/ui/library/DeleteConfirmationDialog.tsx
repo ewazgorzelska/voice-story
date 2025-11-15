@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertTriangleIcon, Loader2Icon, Trash2Icon, XIcon } from "lucide-react";
 
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DeleteConfirmationDialogProps } from "@/types";
 

@@ -1,9 +1,10 @@
 import type { AstroCookies } from "astro";
-import { createServerClient, type CookieOptions, type CookieOptionsWithName } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-import type { Database } from "./database.types.ts";
+import type { Database } from "./types";
+import type { SupabaseClient } from ".";
 
-export const cookieOptions: CookieOptionsWithName = {
+export const cookieOptions: CookieOptions = {
   path: "/",
   secure: true,
   httpOnly: true,
@@ -21,7 +22,7 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
   });
 }
 
-export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }) => {
+export const createSupabaseServerInstance = (context: { headers: Headers; cookies: AstroCookies }): SupabaseClient => {
   const supabaseUrl = import.meta.env.SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 
@@ -45,6 +46,6 @@ export const createSupabaseServerInstance = (context: { headers: Headers; cookie
   return supabase;
 };
 
-export type SupabaseClient = ReturnType<typeof createSupabaseServerInstance>;
+export type { SupabaseClient };
 
 export const DEFAULT_USER_ID = "9d619ae5-34eb-4d42-96ad-5c35109eb329";

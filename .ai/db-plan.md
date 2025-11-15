@@ -11,6 +11,8 @@ This table is managed by Supabase Auth
 - user_id UUID PRIMARY KEY
   - REFERENCES auth.users(id) ON DELETE CASCADE
 - created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+- voice_cloning_consent_given BOOLEAN NOT NULL DEFAULT FALSE
+- scheduled_for_deletion_at TIMESTAMPTZ
 - -- Add additional user metadata columns (e.g., display_name, avatar_url) as needed
 
 ### voice_samples

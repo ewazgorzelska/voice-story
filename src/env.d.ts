@@ -1,7 +1,7 @@
 /// <reference types="astro/client" />
 
 import type { Session } from "@supabase/supabase-js";
-import type { SupabaseClient } from "./db/supabase.client";
+import type { SupabaseClient } from "./db";
 
 declare global {
   namespace App {

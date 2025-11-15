@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import type { StorySummaryDto } from "@/types";
 
 interface StoryCardProps {

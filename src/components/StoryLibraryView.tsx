@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
-import Button from "@/components/ui/button";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import StoryPreferencesForm from "@/components/ui/story-generation/StoryPreferencesForm";
 import StoryGrid from "@/components/ui/story/StoryGrid";
 import StoryPagination from "@/components/ui/story/StoryPagination";
@@ -21,15 +21,31 @@ const arePreferencesEqual = (left: StoryGenerationPreferencesDto, right: StoryGe
 
 export default function StoryLibraryView() {
   const defaultPreferences = useMemo(() => createDefaultStoryPreferences(), []);
+  const [isHydrated, setIsHydrated] = useState(false);
+
   const initialPreferences = useMemo<StoryGenerationPreferencesDto>(() => {
+    // Always return defaults during SSR to avoid hydration mismatch
+    if (!isHydrated) {
+      return defaultPreferences;
+    }
     const stored = loadStoredStoryPreferences();
     return stored ?? defaultPreferences;
-  }, [defaultPreferences]);
+  }, [defaultPreferences, isHydrated]);
 
   const [preferences, setPreferences] = useState<StoryGenerationPreferencesDto>(initialPreferences);
   const [preferenceErrors, setPreferenceErrors] = useState<StoryPreferencesFormErrors>(() =>
     validateStoryPreferences(initialPreferences)
   );
+
+  // Load stored preferences after hydration
+  useEffect(() => {
+    setIsHydrated(true);
+    const stored = loadStoredStoryPreferences();
+    if (stored) {
+      setPreferences(stored);
+      setPreferenceErrors(validateStoryPreferences(stored));
+    }
+  }, []);
 
   const hasErrors = useMemo(() => hasStoryPreferenceErrors(preferenceErrors), [preferenceErrors]);
 

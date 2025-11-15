@@ -3,7 +3,7 @@
 import type { APIRoute } from "astro";
 import type { VoiceSampleDto } from "../../../types";
 import { createVoiceSampleSchema } from "../../../lib/schemas/voiceSampleSchemas";
-import { createVoiceSample } from "../../../lib/services/voiceSampleService";
+import { createVoiceSample, deleteVoiceSample } from "../../../lib/services/voiceSampleService";
 import { ZodError } from "zod";
 import { logError } from "@/lib/logger";
 
@@ -102,6 +102,50 @@ export const GET: APIRoute = async ({ locals }) => {
 };
 
 /**
+ * DELETE /api/voice-sample
+ *
+ * Deletes the voice sample for the authenticated user.
+ *
+ * @returns 204 - No Content
+ * @returns 401 - Unauthorized (missing/invalid token)
+ * @returns 404 - Not found (no voice sample exists)
+ * @returns 500 - Internal server error
+ */
+export const DELETE: APIRoute = async ({ locals }) => {
+  // Authenticate user
+  const {
+    data: { user },
+    error: authError,
+  } = await locals.supabase.auth.getUser();
+
+  if (authError || !user) {
+    return new Response(JSON.stringify({ message: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    await deleteVoiceSample(locals.supabase, user.id);
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    logError("Error deleting voice sample:", error);
+
+    if (error instanceof Error && error.message === "VOICE_SAMPLE_NOT_FOUND") {
+      return new Response(JSON.stringify({ message: "Voice sample not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ message: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+};
+
+/**
  * POST /api/voice-sample
  *
  * Creates a new voice sample for the authenticated user.
@@ -136,6 +180,49 @@ export const POST: APIRoute = async ({ request, locals }) => {
         },
       }
     );
+  }
+
+  // Check for user consent
+  let profile = null;
+  const { data: existingProfile, error: profileError } = await locals.supabase
+    .from("profiles")
+    .select("voice_cloning_consent_given")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    logError("Failed to fetch profile for consent check", profileError);
+    return new Response(JSON.stringify({ message: "Could not verify user profile" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // If profile doesn't exist, create it with default consent = false
+  if (!existingProfile) {
+    const { data: newProfile, error: createError } = await locals.supabase
+      .from("profiles")
+      .insert({ user_id: user.id, voice_cloning_consent_given: false })
+      .select("voice_cloning_consent_given")
+      .single();
+
+    if (createError || !newProfile) {
+      logError("Failed to create profile", createError);
+      return new Response(JSON.stringify({ message: "Could not create user profile" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    profile = newProfile;
+  } else {
+    profile = existingProfile;
+  }
+
+  if (!profile.voice_cloning_consent_given) {
+    return new Response(JSON.stringify({ message: "Voice cloning consent is required" }), {
+      status: 403, // Forbidden
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // Parse FormData

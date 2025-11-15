@@ -6,6 +6,8 @@ import InlineMessage from "./ui/voice-sample/InlineMessage";
 import PlaybackPreview from "./ui/voice-sample/PlaybackPreview";
 import ButtonGroup from "./ui/voice-sample/ButtonGroup";
 import ProgressIndicator from "./ui/voice-sample/ProgressIndicator";
+import { Checkbox } from "@/components/ui/checkbox";
+import Label from "@/components/ui/label";
 
 type RecordingState = "idle" | "recording" | "recorded";
 
@@ -32,6 +34,7 @@ export default function VoiceSampleView() {
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<MessageState | null>(null);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   // Fetch phrase and check existing sample on mount
   useEffect(() => {
@@ -48,6 +51,25 @@ export default function VoiceSampleView() {
       setMessage({ type: "error", text: hookError });
     }
   }, [hookError]);
+
+  const handleConsentChange = async (checked: boolean) => {
+    setConsentGiven(checked);
+    if (checked) {
+      try {
+        const response = await fetch("/api/profile/consent", { method: "POST" });
+        if (!response.ok) {
+          throw new Error("Failed to save consent.");
+        }
+        setMessage(null);
+      } catch (error) {
+        setMessage({
+          type: "error",
+          text: error instanceof Error ? error.message : "An unknown error occurred.",
+        });
+        setConsentGiven(false); // Revert consent if API call fails
+      }
+    }
+  };
 
   const handleRecorded = (blob: Blob) => {
     setAudioBlob(blob);
@@ -129,12 +151,24 @@ export default function VoiceSampleView() {
         {/* Phrase Display */}
         {phrase && <PhraseDisplay phrase={phrase} />}
 
+        {/* Consent Checkbox */}
+        <div className="flex items-center space-x-2">
+          <Checkbox id="consent" checked={consentGiven} onCheckedChange={handleConsentChange} />
+          <Label
+            htmlFor="consent"
+            className="ml-1 text-sm font-medium leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            I consent to the use of my voice sample to create a digital voice for story narration as described in the
+            Privacy Policy.
+          </Label>
+        </div>
+
         {/* Audio Recorder */}
         <AudioRecorder
           state={recordingState}
           onComplete={handleRecorded}
           onError={handleRecordingError}
-          disabled={isUploading || hookLoading}
+          disabled={isUploading || hookLoading || !consentGiven}
           onStateChange={setRecordingState}
         />
 

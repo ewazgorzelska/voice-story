@@ -208,6 +208,35 @@ export class SdkElevenLabsApiClient implements ElevenLabsApiClient {
       .map((voice) => this.toVoiceSummary(voice));
   }
 
+  public async deleteVoice(voiceId: string): Promise<void> {
+    if (!voiceId) {
+      this.logger.warn("deleteVoice called with empty voiceId");
+      return;
+    }
+
+    const run = async () => {
+      await this.client.voices.delete(voiceId);
+    };
+
+    try {
+      await pRetry(run, {
+        ...this.retryOptions,
+        onFailedAttempt: (error) => {
+          this.logger.warn(`Attempt ${error.attemptNumber} failed to delete voice ${voiceId}. Retrying...`);
+        },
+      });
+      this.logger.info(`Successfully deleted voice ${voiceId}`);
+    } catch (error) {
+      this.logger.error(`Failed to delete voice ${voiceId} after multiple retries`, error);
+      if (error instanceof ElevenLabsError && error.status === 404) {
+        // If the voice is already gone, we can consider the operation successful.
+        this.logger.info(`Voice ${voiceId} was already deleted.`);
+        return;
+      }
+      throw new Error(`Failed to delete voice from ElevenLabs: ${voiceId}`);
+    }
+  }
+
   // ==========================================================================
   // Internal Helpers
   // ==========================================================================

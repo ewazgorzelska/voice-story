@@ -1,6 +1,6 @@
 import { LandmarkIcon } from "lucide-react";
 
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { EmptyLibraryStateProps } from "@/types";
 

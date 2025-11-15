@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { AlertCircleIcon, BabyIcon, Clock3Icon, HeadphonesIcon, Trash2Icon } from "lucide-react";
 
-import Button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import AudioPlayer from "@/components/ui/library/AudioPlayer";
 import ProgressDisplay from "@/components/ui/library/ProgressDisplay";

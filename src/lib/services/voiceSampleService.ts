@@ -10,15 +10,16 @@ import { createVoiceModel, createElevenLabsService } from "./elevenlabsService";
  * These phrases are designed to capture a variety of phonemes
  */
 const VERIFICATION_PHRASES = [
-  "Wiewiórka Weronika i żaba Żaneta grały w berka, zwinne i szybkie, pojawiały się i znikały między krzakami jak kolorowe błyski. Jeleń Julian ćwiczył równowagę, stąpając po kłodach.",
-  "Sometimes the smallest things take up the most room in your heart, and honey always tastes better when you share it with friends who truly understand the simple joys of life in the Hundred Acre Wood.",
-  "When you wake up in the morning and think of something that makes you happy, that's going to be the very best day of all, filled with wonderful adventures and perhaps a smackerel of honey or two.",
-  "There's nothing better than a long walk through the forest with a friend who understands you without words and shares every moment with you, exploring the wonders of nature and discovering new places together.",
-  "A true friendship isn't about counting the days we spent together, but making every single day count and special in its own way, creating memories that will last forever in our hearts.",
-  "You are braver than you believe, stronger than you seem, smarter than you think, and most importantly, you are loved more than you know by all the friends who cherish your presence in their lives.",
-  "Even if we are apart, we will always be together, because true friends are never far away from each other in their hearts, no matter how many miles or forests may lie between them.",
-  "Sometimes you just need to sit next to someone in silence, because the most important things are said without words, from the heart, and that's when you know you've found a friend for life.",
-  "A day spent with Piglet, Tigger, and Eeyore is always a day full of adventures, laughter, and unforgettable moments in the Hundred Acre Wood, where every corner holds a new surprise and every friend brings their own special magic.",
+  "Even the smallest of us can change the whole day simply by showing up with kindness, reminding everyone that gentle hearts often make the biggest difference.",
+  "Some days feel heavy, but having a friend who walks beside you can make even the longest path feel lighter and easier to follow.",
+  "When you slow down and enjoy the simple things—a warm snack, a cozy corner, a friendly voice—you discover that happiness often hides in plain sight.",
+  "Knowing someone cares about you turns ordinary moments into treasures, proving that friendship is one of the most comforting adventures we share.",
+  "True bravery isn't loud or grand; it's the small decision to keep going, even when you're unsure, trusting that things will work out in their own gentle way.",
+  "Sometimes it's perfectly fine not to know all the answers; wondering and exploring with open curiosity can be its own delightful reward.",
+  "A thoughtful companion can turn a gloomy, blustery morning into something bright simply by being there and reminding you that storms always pass.",
+  "When you give a little love, it tends to echo back in ways you never expected, proving that kindness stretches farther than we imagine.",
+  "You don't need to be extraordinary to matter; just being yourself—with your quirks, hopes, and small joys—is enough to make the world a bit brighter.",
+  "Even on confusing days, trust that you're exactly where you need to be, and that each step—no matter how wobbly—carries you toward something meaningful.",
 ];
 
 /**
@@ -230,6 +231,55 @@ export async function createVoiceSample(
   }
 
   return newSample as VoiceSampleDto;
+}
+
+/**
+ * Deletes a user's voice sample from the database and the ElevenLabs service.
+ *
+ * @param supabase - Supabase client instance
+ * @param userId - Authenticated user's ID
+ * @throws Error if the voice sample is not found or if deletion fails.
+ */
+export async function deleteVoiceSample(supabase: SupabaseClient, userId: string): Promise<void> {
+  // 1. Fetch the voice sample to get the elevenlabs_voice_id
+  const { data: sample, error: fetchError } = await supabase
+    .from("voice_samples")
+    .select("id, elevenlabs_voice_id")
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchError) {
+    logError("Error fetching voice sample for deletion:", fetchError);
+    throw new Error("Failed to fetch voice sample for deletion");
+  }
+
+  if (!sample) {
+    throw new Error("VOICE_SAMPLE_NOT_FOUND");
+  }
+
+  // 2. Delete the voice from ElevenLabs
+  try {
+    const elevenLabs = createElevenLabsService();
+    await elevenLabs.deleteVoice(sample.elevenlabs_voice_id);
+    logInfo("Successfully deleted voice from ElevenLabs", { voiceId: sample.elevenlabs_voice_id });
+  } catch (error) {
+    logError("Failed to delete voice from ElevenLabs. Continuing with database deletion.", {
+      voiceId: sample.elevenlabs_voice_id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // We proceed to delete from our DB even if the third-party deletion fails
+    // to allow the user to retry the process.
+  }
+
+  // 3. Delete the voice sample from the database
+  const { error: deleteError } = await supabase.from("voice_samples").delete().eq("id", sample.id);
+
+  if (deleteError) {
+    logError("Error deleting voice sample from database:", deleteError);
+    throw new Error("Failed to delete voice sample from database");
+  }
+
+  logInfo("Successfully deleted voice sample for user", { userId, sampleId: sample.id });
 }
 
 /**

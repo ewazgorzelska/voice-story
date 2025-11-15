@@ -26,8 +26,8 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 
 - View path: `/voice-sample`
 - Main purpose: Record and verify user’s voice sample
-- Key information: Verification phrase display (from GET `/api/voice-sample/phrase`), record controls, playback preview, submission status, inline message as feedback,
-- Key components: `AudioRecorder`, `Button`, `ProgressIndicator`,
+- Key information: Verification phrase display (from GET `/api/voice-sample/phrase`), consent checkbox and explanation text, record controls, playback preview, submission status. The record button will be disabled until consent is given.
+- Key components: `AudioRecorder`, `Button`, `ProgressIndicator`, `Checkbox`
 - UX/accessibility/security: Visual feedback on recording state, keyboard operability, audio element ARIA roles, limit one sample per user
 
 ### 2.4 Story Library View
@@ -54,7 +54,15 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 - Key components: `AudioPlayer`, `Card`, `Button`, `ConfirmationDialog`, `Skeleton`, `Tag`
 - UX/accessibility/security: Keyboard-accessible controls, confirmation on delete, ARIA live region for status updates
 
-### 2.7 Error Views
+### 2.7 Account Settings View
+
+- View path: `/account`
+- Main purpose: Allow users to manage their data and account.
+- Key information: "Delete Voice Sample" button (calls `DELETE /api/voice-sample`), "Delete Account" button (calls `DELETE /api/account`). Both actions require confirmation.
+- Key components: `Button`, `ConfirmationDialog`
+- UX/accessibility/security: Clear warnings about data deletion, focus management in confirmation dialogs.
+
+### 2.8 Error Views
 
 - View paths: `/*` (404), global error boundary (500)
 - Main purpose: Inform users of routing errors or application failures
@@ -75,7 +83,7 @@ The Voice Story App uses Astro for routing and layouts, with React islands for d
 ## 4. Layout and Navigation Structure
 
 - `Layout.astro` wraps pages in: `QueryClientProvider` ➔ `UserContextProvider` ➔ `<header>` ➔ `<main>` ➔ `<footer>`.
-- Desktop: horizontal navbar with links to **Stories**, **My Library**, **Record Voice**, and **Logout**.
+- Desktop: horizontal navbar with links to **Stories**, **My Library**, **Record Voice**, **Account**, and **Logout**.
 - Mobile: hamburger icon opens Shadcn/ui `Drawer` with the same links.
 - Active route highlighted; keyboard focus managed via Tailwind focus-visible classes.
 

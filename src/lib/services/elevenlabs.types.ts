@@ -184,6 +184,7 @@ export interface ElevenLabsApiClient {
   getSpeakerAudio(voiceId: string, filters?: SpeakerSampleFilters): Promise<SpeakerSample[]>;
   useVoice(voiceId: string, options: UseVoiceOptions): Promise<VoiceUsageContext>;
   listVoices(filter?: VoiceFilter): Promise<VoiceSummary[]>;
+  deleteVoice(voiceId: string): Promise<void>;
 }
 
 // ============================================================================

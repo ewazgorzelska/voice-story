@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import NavBar from "@/components/NavBar.astro";
+import { Toaster } from "@/components/ui/sonner";
 
 interface Props {
   title?: string;
@@ -24,6 +25,7 @@ const currentPath = Astro.url.pathname;
   <body>
     {hideNav ? null : <NavBar currentPath={currentPath} user={user} />}
     <slot />
+    <Toaster />
   </body>
 </html>
 
