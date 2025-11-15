@@ -23,9 +23,11 @@ export default function ForgotPasswordForm() {
     try {
       await forgotPassword(data);
       setIsSuccess(true);
-    } catch (error: any) {
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Something went wrong. Please try again or contact support.";
       setError("root.form", {
-        message: error.message || "Something went wrong. Please try again or contact support.",
+        message,
       });
     }
   };

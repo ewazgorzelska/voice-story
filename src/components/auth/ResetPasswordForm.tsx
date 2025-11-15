@@ -21,20 +21,33 @@ const ResetPasswordForm = () => {
     try {
       await resetPassword(data);
       window.location.assign("/login?reset=success");
-    } catch (error: any) {
-      if (error.code === "EXPIRED_OR_INVALID_TOKEN") {
+    } catch (error) {
+      const isErrorWithCode = (err: unknown): err is { code: string; message?: string; details?: unknown } => {
+        return typeof err === "object" && err !== null && "code" in err;
+      };
+
+      const hasFieldErrors = (details: unknown): details is { fieldErrors: Record<string, string[]> } => {
+        return (
+          typeof details === "object" &&
+          details !== null &&
+          "fieldErrors" in details &&
+          typeof details.fieldErrors === "object"
+        );
+      };
+
+      if (isErrorWithCode(error) && error.code === "EXPIRED_OR_INVALID_TOKEN") {
         setError("root.form", { message: "This reset link is no longer valid. Request a new one." });
-      } else if (error.code === "INVALID_INPUT" && error.details?.fieldErrors) {
-        const fieldErrors = error.details.fieldErrors as Record<string, string[]>;
+      } else if (isErrorWithCode(error) && error.code === "INVALID_INPUT" && hasFieldErrors(error.details)) {
+        const fieldErrors = error.details.fieldErrors;
         Object.entries(fieldErrors).forEach(([field, messages]) => {
           if (messages.length > 0) {
             setError(field as keyof ResetPasswordInput, { message: messages[0] });
           }
         });
       } else {
-        setError("root.form", {
-          message: error.message || "Something went wrong. Please try again or contact support.",
-        });
+        const message =
+          error instanceof Error ? error.message : "Something went wrong. Please try again or contact support.";
+        setError("root.form", { message });
       }
     }
   };
